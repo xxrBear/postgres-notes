@@ -8,6 +8,10 @@
 推荐使用官方安装包，前往[下载页](https://www.postgresql.org/download/)下载对应系统的安装包
 
 ## SQL 风格
+<details>
+<summary>点击展开</summary>
+</br>
+  
 **关键字大写，字段/表名小写**
 
 ```sql
@@ -92,3 +96,4 @@ FROM orders o
 JOIN customers c ON o.customer_id = c.id
 WHERE o.status = 'completed';
 ```
+</details>
