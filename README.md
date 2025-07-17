@@ -1,13 +1,15 @@
 # postgres-notes
 
+- [postgres-notes](#postgres-notes)
   - [安装数据库](#安装数据库)
+  - [SQL 风格](#sql-风格)
 
 ## 安装数据库
 
 推荐使用官方安装包，前往[下载页](https://www.postgresql.org/download/)下载对应系统的安装包
 
 ## SQL 风格
-### 关键字大写，字段/表名小写
+**关键字大写，字段/表名小写**
 
 ```sql
 SELECT id, name, created_at
@@ -15,7 +17,7 @@ FROM users
 WHERE status = 'active';
 ```
 
-### 每个子句独占一行，逻辑清晰
+**每个子句独占一行，逻辑清晰**
 
 ```sql
 SELECT id, name, email
@@ -26,7 +28,7 @@ ORDER BY created_at DESC;
 ```
 
 
-### 缩进对齐（2 或 4 空格，保持统一）
+**缩进对齐（2 或 4 空格，保持统一）**
 
 ```sql
 SELECT
@@ -40,7 +42,7 @@ WHERE
 ```
 
 
-### 表别名统一风格，建议简洁有意义
+**表别名统一风格，建议简洁有意义**
 
 ```sql
 SELECT o.order_id, c.name
@@ -51,7 +53,7 @@ JOIN customers c ON o.customer_id = c.id;
 不推荐使用 `a`, `b`, `t1`, `t2` 这类无意义的别名。
 
 
-### 使用显式 JOIN，避免隐式连接
+**使用显式 JOIN，避免隐式连接**
 
 推荐：
 
@@ -70,7 +72,7 @@ WHERE o.customer_id = c.id;
 ```
 
 
-### WHERE 子句对齐 AND/OR
+**WHERE 子句对齐 AND/OR**
 
 ```sql
 WHERE
@@ -82,7 +84,7 @@ WHERE
 ```
 
 
-### 复杂查询可分块注释
+**复杂查询可分块注释**
 
 ```sql
 -- 获取订单及客户信息
