@@ -8,6 +8,7 @@
 - [自定义配置参数](#自定义配置参数)
 - [常用数据类型](#常用数据类型)
 - [常用函数](#常用函数)
+- [连接语句](#连接语句)
 
 
 ## 安装数据库
@@ -206,6 +207,7 @@ SHOW config_file;
 点击展开    
 </summary>
 </br>
+
  **数值类型**
 
 | 类型                            | 描述                                     |
@@ -495,4 +497,77 @@ SELECT SUM(salary) FROM employees; -- 工资总和
 
 SELECT STRING_AGG(name, ', ') FROM users; -- 拼接字符串
 ```
+</details>
+
+## 连接语句 
+<details>
+<summary>
+点击展开    
+</summary>
+</br>
+
+**内连接**
+在 PostgreSQL 中，INNER JOIN 的行为如下：
+
+> 只返回两个表中 满足 ON 条件 的匹配行
+
+创建表
+```sql
+CREATE TABLE department (
+    id SERIAL PRIMARY KEY,
+    name TEXT
+);
+
+CREATE TABLE employee (
+    id SERIAL PRIMARY KEY,
+    name TEXT,
+    dept_id INT
+);
+
+```
+
+插入数据
+```sql
+INSERT INTO department (name) VALUES ('IT'), ('HR');
+
+INSERT INTO employee (name, dept_id) VALUES
+  ('Alice', 1),
+  ('Bob', 2),
+  ('Carol', NULL),
+  ('David', 3);
+```
+
+| employee.id | name  | dept_id |
+| ----------- | ----- | ------- |
+| 1           | Alice | 1       |
+| 2           | Bob   | 2       |
+| 3           | Carol | NULL    |
+| 4           | David | 3       |
+
+| department.id | name |
+| ------------- | ---- |
+| 1             | IT   |
+| 2             | HR   |
+
+执行内连接
+```sql
+SELECT e.name AS employee_name, d.name AS department_name
+FROM employee e
+INNER JOIN department d
+ON e.dept_id = d.id;
+```
+
+结果
+| employee\_name | department\_name |
+| -------------- | ---------------- |
+| Alice          | IT               |
+| Bob            | HR               |
+
+
+**外连接**
+
+左连接
+
+
+
 </details>
