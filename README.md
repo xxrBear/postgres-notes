@@ -4,7 +4,9 @@
 
 - [安装数据库](#安装数据库)
 - [SQL 风格](#sql-风格)
+- [查看运行参数](#查看运行参数)
 - [自定义配置参数](#自定义配置参数)
+- [常用数据类型](#常用数据类型)
 - [常用函数](#常用函数)
 
 
@@ -103,9 +105,87 @@ WHERE o.status = 'completed';
 ```
 </details>
 
-## 自定义配置参数
+## 查看运行参数
 <details>
 <summary>点击展开</summary>
+</br>
+在 PostgreSQL 中，SHOW 命令用于 查看当前数据库的运行时参数配置
+
+**性能与内存相关**
+
+```sql
+SHOW shared_buffers;                 -- PostgreSQL 用于缓存数据块的内存
+SHOW work_mem;                       -- 每个排序、哈希操作的内存大小
+SHOW maintenance_work_mem;          -- 维护操作（如VACUUM, CREATE INDEX）使用的内存
+SHOW effective_cache_size;          -- 操作系统文件缓存的估计值
+SHOW random_page_cost;              -- 非顺序读取一个页面的成本估计
+```
+
+**并发与并行控制**
+
+```sql
+SHOW max_connections;                -- 最大连接数
+SHOW max_worker_processes;          -- 最大后台工作进程数
+SHOW max_parallel_workers;          -- 最大并行工作者数
+SHOW max_parallel_workers_per_gather; -- 每次并行Gather的最大并行工作者数
+SHOW max_parallel_maintenance_workers; -- CREATE INDEX等使用的并行工作者数
+```
+
+**WAL日志与检查点**
+
+```sql
+SHOW wal_level;                     -- 日志级别（minimal / replica / logical）
+SHOW wal_buffers;                   -- WAL缓冲区大小
+SHOW checkpoint_completion_target;  -- 检查点完成目标时间
+SHOW min_wal_size;                  -- 最小WAL文件总大小
+SHOW max_wal_size;                  -- 最大WAL文件总大小
+```
+
+**日志记录相关**
+
+```sql
+SHOW log_destination;                -- 日志输出目标（stderr, csvlog等）
+SHOW logging_collector;             -- 是否启用日志收集器
+SHOW log_min_duration_statement;    -- 执行超过指定时间的SQL将被记录
+SHOW log_directory;                 -- 日志文件存放目录
+SHOW log_filename;                  -- 日志文件名称模板
+```
+
+
+**编码、时区、语言**
+
+```sql
+SHOW client_encoding;               -- 客户端字符集编码
+SHOW server_encoding;               -- 服务器端编码
+SHOW lc_collate;                    -- 排序规则
+SHOW lc_ctype;                      -- 字符分类
+SHOW TimeZone;                      -- 当前数据库时区
+```
+
+**其它实用参数**
+
+```sql
+SHOW default_statistics_target;     -- 默认统计目标，影响ANALYZE粒度
+SHOW temp_buffers;                  -- 每个连接分配的临时缓存区
+SHOW enable_seqscan;                -- 是否启用顺序扫描（可用于调优）
+SHOW synchronous_commit;            -- 是否同步提交（影响性能与可靠性）
+```
+
+
+**一次性查看多个参数**
+
+```sql
+SHOW ALL LIKE 'max_%';
+SHOW ALL LIKE '%buffer%';
+SHOW ALL LIKE '%log%';
+```
+</details>
+
+## 自定义配置参数
+
+<details>
+<summary>点击展开</summary>
+</br>
 PostgreSQL 安装后的默认配置通常并不适合生产环境的高性能需求，默认配置为了兼容低配置机器（如 512MB 内存的老机器），保守设置
 
 推荐使用：[PGTune](https://pgtune.leopard.in.ua/)
@@ -120,10 +200,130 @@ SHOW config_file;
 修改配置文件并保存，重启数据库
 </details>
 
+## 常用数据类型
+<details>
+<summary>
+点击展开    
+</summary>
+</br>
+ **数值类型**
+
+| 类型                            | 描述                                     |
+| ------------------------------- | ---------------------------------------- |
+| `smallint`                      | 2 字节整数（-32,768 \~ 32,767）          |
+| `integer` 或 `int`              | 4 字节整数（-2^31 \~ 2^31-1）            |
+| `bigint`                        | 8 字节整数（-2^63 \~ 2^63-1）            |
+| `decimal(p,s)` / `numeric(p,s)` | 高精度定点数                             |
+| `real`                          | 4 字节浮点数                             |
+| `double precision`              | 8 字节浮点数                             |
+| `serial`                        | 自增 4 字节整数（等价于 int + sequence） |
+| `bigserial`                     | 自增 8 字节整数                          |
+
+**字符类型**
+
+| 类型         | 描述                          |
+| ------------ | ----------------------------- |
+| `char(n)`    | 固定长度字符串，不足会补空格  |
+| `varchar(n)` | 可变长度字符串，最大 n 个字符 |
+| `text`       | 可变长度字符串，无长度限制    |
+
+**日期与时间类型**
+
+| 类型          | 描述                                       |
+| ------------- | ------------------------------------------ |
+| `timestamp`   | 无时区时间戳                               |
+| `timestamptz` | 带时区的时间戳（timestamp with time zone） |
+| `date`        | 日期（YYYY-MM-DD）                         |
+| `time`        | 时间（无日期）                             |
+| `interval`    | 时间间隔（如 "2 days 3 hours"）            |
+
+ **布尔类型**
+
+| 类型      | 描述                    |
+| --------- | ----------------------- |
+| `boolean` | `TRUE`、`FALSE`、`NULL` |
+
+**枚举类型**
+
+你可以自定义枚举：
+
+```sql
+CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');
+```
+
+**数组类型**
+
+```sql
+-- 整数数组
+integer[];
+text[]; 
+-- 多维数组也支持
+```
+
+**JSON / JSONB 类型**
+
+| 类型    | 描述                            |
+| ------- | ------------------------------- |
+| `json`  | 文本形式存储 JSON，不支持索引   |
+| `jsonb` | 二进制 JSON，支持索引，推荐使用 |
+
+---
+
+**UUID 类型**
+
+| 类型   | 描述                    |
+| ------ | ----------------------- |
+| `uuid` | 通用唯一标识符（128位） |
+
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+);
+```
+
+**网络相关类型**
+
+| 类型      | 描述               |
+| --------- | ------------------ |
+| `inet`    | IPv4 或 IPv6 地址  |
+| `cidr`    | 网络地址（含掩码） |
+| `macaddr` | MAC 地址           |
+
+**几何类型**
+
+| 类型      | 描述           |
+| --------- | -------------- |
+| `point`   | 点 (x, y)      |
+| `line`    | 无限直线       |
+| `lseg`    | 线段           |
+| `box`     | 矩形框         |
+| `circle`  | 圆形           |
+| `path`    | 路径（开或闭） |
+| `polygon` | 多边形         |
+
+**高级类型（可选）**
+
+* `tsvector`, `tsquery`：全文搜索
+* `money`：货币类型（但建议用 numeric）
+* `bit`, `bit varying`：位串（少见）
+
+
+
+**查询所有数据类型**
+
+```sql
+-- 查看所有已注册的类型（系统 + 自定义）
+SELECT typname, typtype, typcategory FROM pg_type;
+```
+
+</details>
+
+
 ## 常用函数
 
 <details>
 <summary>点击展开</summary>
+</br>
 
 **字符串函数**
 
