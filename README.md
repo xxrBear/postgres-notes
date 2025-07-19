@@ -564,8 +564,6 @@ ON e.dept_id = d.id;
 
 **外连接**
 
-左连接
-
 
 
 </details>
