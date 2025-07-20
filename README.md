@@ -562,8 +562,5 @@ ON e.dept_id = d.id;
 | Bob            | HR               |
 
 
-**外连接**
-
-
 
 </details>
