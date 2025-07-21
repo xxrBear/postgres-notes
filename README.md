@@ -505,6 +505,7 @@ SELECT STRING_AGG(name, ', ') FROM users; -- 拼接字符串
 </br>
 
 **内连接**
+
 在 PostgreSQL 中，INNER JOIN 的行为如下：
 
 > 只返回两个表中 满足 ON 条件 的匹配行
@@ -561,6 +562,100 @@ ON e.dept_id = d.id;
 | Alice          | IT               |
 | Bob            | HR               |
 
+**外连接**
+
+postgres 中有多种不同的外连接语句，左连接、右连接、全外连接、交叉连接
+
+| 类型                         | 描述                                                      |
+| ---------------------------- | --------------------------------------------------------- |
+| LEFT OUTER JOIN（左外连接）  | 保留左表全部记录，即使右表中没有匹配的也保留，右表补 NULL |
+| RIGHT OUTER JOIN（右外连接） | 保留右表全部记录，左表没有匹配的补 NULL                   |
+| FULL OUTER JOIN（全外连接）  | 左右两边都保留，没有匹配的那一边用 NULL 补上              |
+
+
+student 表
+
+| id  | name    |
+| --- | ------- |
+| 1   | Alice   |
+| 2   | Bob     |
+| 3   | Charlie |
+
+score 表
+
+| student_id | score |
+| ---------- | ----- |
+| 1          | 95    |
+| 2          | 88    |
+| 4          | 70    |
+
+左外连接
+```sql
+SELECT s.id, s.name, sc.score
+FROM students s
+LEFT OUTER JOIN scores sc
+ON s.id = sc.student_id;
+```
+
+查询结果
+| id  | name    | score |
+| --- | ------- | ----- |
+| 1   | Alice   | 95    |
+| 2   | Bob     | 88    |
+| 3   | Charlie | NULL  |
+
+右外连接
+```sql
+SELECT s.id, s.name, sc.score
+FROM students s
+RIGHT OUTER JOIN scores sc
+ON s.id = sc.student_id;
+```
+
+结果
+| id   | name  | score |
+| ---- | ----- | ----- |
+| 1    | Alice | 95    |
+| 2    | Bob   | 88    |
+| NULL | NULL  | 70    |
+
+全外连接
+```sql
+SELECT s.id, s.name, sc.score
+FROM students s
+FULL OUTER JOIN scores sc
+ON s.id = sc.student_id;
+```
+
+结果
+
+| id   | name    | score |
+| ---- | ------- | ----- |
+| 1    | Alice   | 95    |
+| 2    | Bob     | 88    |
+| 3    | Charlie | NULL  |
+| NULL | NULL    | 70    |
+
+交叉连接
+```sql
+SELECT s.id, s.name, sc.student_id, sc.score
+FROM students s
+CROSS JOIN scores sc;
+```
+
+结果
+
+| id  | name    | student_id | score |
+| --- | ------- | ---------- | ----- |
+| 1   | Alice   | 1          | 95    |
+| 1   | Alice   | 2          | 88    |
+| 1   | Alice   | 4          | 70    |
+| 2   | Bob     | 1          | 95    |
+| 2   | Bob     | 2          | 88    |
+| 2   | Bob     | 4          | 70    |
+| 3   | Charlie | 1          | 95    |
+| 3   | Charlie | 2          | 88    |
+| 3   | Charlie | 4          | 70    |
 
 
 </details>
