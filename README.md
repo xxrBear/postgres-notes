@@ -9,6 +9,7 @@
 - [常用数据类型](#常用数据类型)
 - [常用函数](#常用函数)
 - [连接语句](#连接语句)
+- [事务处理](#事务处理)
 
 
 ## 安装数据库
@@ -657,5 +658,267 @@ CROSS JOIN scores sc;
 | 3   | Charlie | 2          | 88    |
 | 3   | Charlie | 4          | 70    |
 
+
+</details>
+
+## 事务处理
+
+<details>
+<summary>点击展开</summary>
+</br>
+
+**简介**
+
+PostgreSQL 事务处理（Transaction Processing）是指在数据库中执行一系列 SQL 语句，使其成为一个不可分割的操作单元，即 要么全部执行成功，要么全部回滚，以确保数据的一致性和完整性
+
+**准备工作**
+
++ 创建演示表
+
+```sql
+CREATE TABLE "public"."users" (
+  "user_account" varchar(32) COLLATE "pg_catalog"."default" NOT NULL,
+  "username" varchar(32) COLLATE "pg_catalog"."default",
+  "user_avatar" varchar(64) COLLATE "pg_catalog"."default",
+  "user_profile" varchar(512) COLLATE "pg_catalog"."default",
+  "hashed_password" varchar COLLATE "pg_catalog"."default" NOT NULL
+);
+```
+
+**基本操作**
+
++ 提交事务
+
+```sql
+BEGIN; -- 开启事务
+
+-- SQL 语句
+INSERT INTO users (user_account, hashed_password) VALUES ('Alice', 'xxxx');
+
+COMMIT; -- 提交事务
+```
+
++ 回滚事务
+
+```sql
+BEGIN
+
+DELETE FROM users;
+
+ROLLBACK;
+```
+
++ 设置回滚点
+
+`SAVEPOINT` 允许在事务内部创建回滚点，部分 SQL 语句可以回滚，而不影响其他 SQL
+
+```sql
+BEGIN;
+
+INSERT INTO users (user_account, hashed_password) VALUES ('Alice', 'xxxx');
+SAVEPOINT sp1; -- 创建回滚点
+
+INSERT INTO users (user_account, hashed_password) VALUES ('Alice2', 'xxxx');
+SAVEPOINT sp2;
+
+INSERT INTO users (user_account, hashed_password) VALUES ('Alice3', 'xxxx');
+ROLLBACK TO sp2;
+
+COMMIT; -- 提交事务
+```
+
+
+**事务隔离级别**
+
+在数据库中，事务隔离级别用于控制多个事务并发执行时的可见性，避免数据不一致的问题。PostgreSQL 遵循 ACID（原子性、一致性、隔离性、持久性） 原则，并提供四种事务隔离级别
+
+| 隔离级别         | 脏读     | 不可重复读 | 幻读     |
+| ---------------- | -------- | ---------- | -------- |
+| 读未提交         | 可能发生 | 可能发生   | 可能发生 |
+| 读已提交（默认） | 不会发生 | 可能发生   | 可能发生 |
+| 可重复读         | 不会发生 | 不会发生   | 可能发生 |
+| 可串行化         | 不会发生 | 不会发生   | 不会发生 |
+
+
+下面我们来逐一介绍
+
+**读未提交/读已提交**
+
+PostgreSQL 不真正支持 **读未提交** 这个级别，而是当作 **读已提交**处理
+
+即，就算你设置了这个级别，PG 数据库还是会使用 **读已提交** 级别事务隔离
+
+**脏读示例（PG 不支持）**
+
+```sql
+BEGIN; -- 事务1
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+UPDATE users SET hashed_password = 'new_hash' WHERE user_account = 'Alice';
+SELECT txid_current(); -- 查看当前事务id
+-- 保持事务未提交
+
+BEGIN; -- 事务2
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+SELECT * FROM users WHERE user_account = 'Alice';
+SELECT txid_current();
+
+
+ROLLBACK; -- 释放锁，事务 2 的查询继续执行
+```
+
+> 注意：我的 navacat17 版本，一个查询页面执行的语句是同一个事务，所以想让上面语句生效，你可能需要开启两个查询页面，分别执行事务 1 和 2
+>
+
+**不可重复读**
+
++ 事务 1
+
+```sql
+BEGIN;
+SELECT hashed_password FROM users;
+```
+
++ 事务 2
+
+```sql
+BEGIN;
+UPDATE users SET hashed_password = 'xxxx';
+COMMIT;
+```
+
++ 事务 1
+
+```sql
+SELECT hashed_password FROM users;
+```
+
+问题：事务 1 在第一次 `SELECT` 时看到的是 hashed_password 与 第二次查询时hashed_password 不一致，这就是不可重复读
+
+**幻读**
+
++ 事务 1
+
+```sql
+BEGIN;
+SELECT COUNT(*) FROM users; -- 假设是3
+```
+
++ 事务 2
+
+```sql
+BEGIN;
+INSERT INTO users (user_account, hashed_password) VALUES ('Alice4', 'xxxx');
+COMMIT; -- 增加到4
+```
+
++ 事务 1
+
+```sql
+SELECT COUNT(*) FROM users; -- 增加到4
+```
+
+**问题**：事务 1 在开始时认为 `users` 里数据为 3，但在事务进行中，别的事务插入了一条数据，事务 1 重新查询时，发现数据数量变了，这就是**幻读**！
+
+**可串行化**
+
+这个级别会防止所有并发事务间的异常现象（脏读、不可重复读、幻读），并模拟出串行执行的效果
+
+示例：两个事务试图判断总工资是否超过上限，如果没超过就插入新员工
+
+表结构
+
+```sql
+DROP TABLE IF EXISTS employees;
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    name TEXT,
+    salary INT
+);
+```
+
+假设你希望：**总工资不能超过 10000**
+
+会话 A：
+
+```sql
+BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+-- 查询总工资
+SELECT SUM(salary) FROM employees;
+
+-- 如果小于 10000，就插入新员工
+INSERT INTO employees (name, salary) VALUES ('alice', 6000);
+-- COMMIT;
+```
+会话 B（并发执行）：
+
+```sql
+BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+-- 查询总工资
+SELECT SUM(salary) FROM employees;
+
+-- 也判断为小于 10000，于是插入
+INSERT INTO employees (name, salary) VALUES ('bob', 6000);
+
+COMMIT;
+```
+
+会话 A 提交
+
+```sql
+COMMIT;
+```
+
+会报错
+
+```
+ERROR: could not serialize access due to read/write dependencies among transactions
+```
+
+PostgreSQL 发现两个事务虽然在一开始都看到工资小于 10000，但同时插入后将违反业务逻辑（工资总额实际超过了），所以**强制中止一个事务来防止幻读**
+
+> 这就是事务隔离级别 `SERIALIZABLE` 的意义：**在并发读写逻辑上模拟串行操作，保护业务语义的一致性。**
+
+建议
+-  `SERIALIZABLE` 用于重要并发控制，如资金扣除、库存操作    
+- 遇到 `could not serialize` 错误，建议应用层重试事务 
+- 不要滥用 `SERIALIZABLE`，性能开销大，优先考虑 `REPEATABLE READ` 
+
+
+**设置事务隔离级别**
+
+在事务中设置
+
+```sql
+BEGIN;
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+-- SQL 语句
+COMMIT;
+```
+
+在会话级别设置
+
+```sql
+SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+```
+
++ 这会影响当前会话中的所有事务
+
+在 PostgreSQL 配置文件 `postgresql.conf` 设置（全局）
+
+```sql
+default_transaction_isolation = 'read committed'
+```
+
++ 影响所有数据库的默认隔离级别
+
+**自动提交**
+
+PostgreSQL 默认开启自动提交模式，即每条 SQL 语句都会被自动提交。如果要手动管理事务，需要显式使用 `BEGIN`
+
+```sql
+SET AUTOCOMMIT TO OFF;
+```
 
 </details>
