@@ -931,15 +931,14 @@ SET AUTOCOMMIT TO OFF;
 
 **简介**
 
-PostgreSQL 的 触发器 Trigger 是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数（触发器函数）。它常用于 数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景
+PostgreSQL 的触发器 Trigger 是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数（触发器函数）。它常用于 数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景
 
 **触发器的构成**
 
 一个完整的触发器由两个部分组成：
 
-触发器函数（Trigger Function）：触发器执行的具体逻辑，必须返回 `TRIGGER` 类型
-
-触发器（Trigger）：绑定到表的某个事件上，调用触发器函数
+- 触发器函数（Trigger Function）：触发器执行的具体逻辑，必须返回 `TRIGGER` 类型
+- 触发器（Trigger）：绑定到表的某个事件上，调用触发器函数
 
 **触发器的类型**
 
@@ -963,12 +962,10 @@ PostgreSQL 的 触发器 Trigger 是一类特殊的数据库对象，在表的 I
 
 **创建触发器**
 
-简介
-
 PostgreSQL 触发器的创建需要两步：
 
-1. 编写触发器函数（必须返回 `TRIGGER` 类型）
-2. 创建触发器 并绑定到表
+- 编写触发器函数（必须返回 `TRIGGER` 类型）
+- 创建触发器并绑定到表
 
 假设我们有一个 `users` 表，我们希望在有新用户插入时，自动记录日志到 `user_logs` 表中
 
@@ -1008,7 +1005,7 @@ EXECUTE FUNCTION log_user_insert();
 
 **示例 2：自动更新修改时间**
 
-假设 `users` 表中有一个 `updated_at` 字段，我们希望在用户数据更新时，自动更新 `updated_at` 时间戳。
+假设 `users` 表中有一个 `updated_at` 字段，我们希望在用户数据更新时，自动更新 `updated_at` 时间戳
 
 Step 1: 在 `users` 表添加 `updated_at` 字段
 
@@ -1036,9 +1033,9 @@ FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
 ```
 
-**示例 3：防止 DELETE**
+**示例 3：防止误删除**
 
-有时我们不希望某些重要数据被删除，可以通过 `BEFORE DELETE`** 触发器阻止删除**。
+有时我们不希望某些重要数据被删除，可以通过`BEFORE DELETE`**触发器阻止删除**
 
 Step 1: 创建触发器函数
 
