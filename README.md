@@ -2,6 +2,8 @@
 <img src="https://cdn.jsdelivr.net/gh/xxrBear/image//Hugo/202505152126346.png" height="200"/>
 </div>
 
+<h2>目录</h2>
+
 - [安装数据库](#安装数据库)
 - [SQL 风格](#sql-风格)
 - [查看运行参数](#查看运行参数)
