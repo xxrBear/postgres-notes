@@ -11,6 +11,7 @@
 - [连接语句](#连接语句)
 - [事务处理](#事务处理)
 - [触发器](#触发器)
+- [存储过程](#存储过程)
 
 
 ## 安装数据库
@@ -1076,4 +1077,90 @@ DROP TRIGGER IF EXISTS user_insert_trigger ON users;
 ```sql
 DROP FUNCTION IF EXISTS log_user_insert();
 ```
+</details>
+
+## 存储过程
+
+<details>
+<summary>点击展开</summary>
+
+**简介**
+
+PostgreSQL 中的存储过程，是一种在数据库中定义的可重复使用的程序单元，用于封装复杂的业务逻辑和数据处理操作，类似编程语言的函数
+
+**示例**
+
+简单示例
+
++ 创建存储过程
+
+```sql
+CREATE PROCEDURE insert_users (user_account TEXT, hashed_password TEXT) LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO users (user_account, hashed_password)
+  VALUES
+  (user_account, hashed_password);
+END $$;
+```
+
++ 调用
+
+```sql
+CALL insert_users(value1, value2);
+```
+
+**事务控制**
+
+```sql
+CREATE PROCEDURE update_salary(emp_id INT, new_salary NUMERIC)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE employees SET salary = new_salary WHERE id = emp_id;
+    
+    -- 如果工资小于 0，则回滚事务
+    IF new_salary < 0 THEN
+        ROLLBACK;
+    ELSE
+        COMMIT;
+    END IF;
+END;
+$$;
+```
+
+**循环**
+
+```sql
+CREATE PROCEDURE insert_multiple_employees()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    i INT := 1;
+BEGIN
+    WHILE i <= 5 LOOP
+        INSERT INTO employees (name, salary) VALUES ('Employee_' || i, i * 1000);
+        i := i + 1;
+    END LOOP;
+END;
+$$;
+```
+
+**带输入和输出参数**
+
+```sql
+CREATE PROCEDURE get_employee_salary(IN emp_id INT, OUT emp_salary NUMERIC)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    SELECT salary INTO emp_salary FROM employees WHERE id = emp_id;
+END;
+$$;
+```
+
+**删除存储过程**
+
+```sql
+DROP PROCEDURE xxxxx(TEXT, NUMERIC);
+```
+
 </details>
