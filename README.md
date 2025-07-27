@@ -14,6 +14,7 @@
 - [事务处理](#事务处理)
 - [触发器](#触发器)
 - [存储过程](#存储过程)
+- [模式管理](#模式管理)
 
 
 ## 安装数据库
@@ -34,7 +35,7 @@ WHERE status = 'active';
 ```
 
 **每个子句独占一行，逻辑清晰**
-
+G
 ```sql
 SELECT id, name, email
 FROM customers
@@ -1164,5 +1165,103 @@ $$;
 ```sql
 DROP PROCEDURE xxxxx(TEXT, NUMERIC);
 ```
+
+</details>
+
+## 模式管理
+<details>
+<summary>点击展开</summary>
+
+在 PostgreSQL 中，模式（schema）是一个逻辑命名空间，用来组织数据库中的对象，比如表、视图、函数、类型等
+
+> schema 就像数据库里的“文件夹”或“命名空间”，用来隔离和管理不同的数据库对象，防止命名冲突
+>
+
+**举个例子说明**
+
+假设你有两个团队在开发两个系统，他们都需要一个叫 `users` 的表：
+
+```sql
+CREATE SCHEMA hr;
+CREATE SCHEMA sales;
+
+CREATE TABLE hr.users (...);     -- 人力资源系统的用户表
+CREATE TABLE sales.users (...);  -- 销售系统的用户表
+```
+
+它们都叫 `users`，但因为放在不同的 schema 里，所以互不干扰
+
+**PostgreSQL 中的层次结构**
+
+```plain
+一个数据库（database）
+│
+├── schema1
+│   ├── table1
+│   ├── view1
+│
+├── schema2
+│   ├── table1（同名也可以）
+│   ├── function1
+```
+
+**默认的 schema 是 public**
+
+如果你不写 schema 名，PostgreSQL 默认放到 `public` 里：
+
+```sql
+CREATE TABLE test (id INT);
+-- 实际上等价于：
+CREATE TABLE public.test (id INT);
+```
+
+**常用操作**
+
+创建 schema
+```sql
+CREATE SCHEMA my_schema;
+```
+
+使用 schema 中的对象
+```sql
+SELECT * FROM my_schema.users;
+```
+
+删除 schema
+```sql
+DROP SCHEMA my_schema CASCADE;
+```
+
+改变搜索路径（影响默认 schema 查找）
+```sql
+SET search_path TO my_schema, public;
+```
+
+这会让你查询 `SELECT * FROM users;` 时，先在 `my_schema` 中找 `users` 表，再到 `public`
+
+**Schema 的实际用途**
+
+| 用途                       | 说明                                                                |
+| -------------------------- | ------------------------------------------------------------------- |
+| 命名隔离                   | 不同模块/应用可以使用相同表名而不冲突                               |
+| 权限管理                   | 可以给不同 schema 设置不同的访问权限                                |
+| 多租户系统（multi-tenant） | 每个租户一个 schema，隔离数据                                       |
+| 扩展管理                   | PostgreSQL 的扩展经常安装在 `pg_catalog` 或 `extension_name` schema |
+
+
+**Schema 与权限控制**
+
+你可以对 schema 本身设置访问权限：
+
+```sql
+-- 只允许某用户访问某个 schema
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA finance TO bob;
+```
+
+其中：
+
++ `USAGE` 权限：可以访问 schema 中的对象
++ `CREATE` 权限：可以在 schema 中新建对象
 
 </details>
