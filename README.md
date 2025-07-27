@@ -15,6 +15,7 @@
 - [触发器](#触发器)
 - [存储过程](#存储过程)
 - [模式管理](#模式管理)
+- [角色管理](#角色管理)
 
 
 ## 安装数据库
@@ -1263,5 +1264,158 @@ GRANT USAGE ON SCHEMA finance TO bob;
 
 + `USAGE` 权限：可以访问 schema 中的对象
 + `CREATE` 权限：可以在 schema 中新建对象
+
+</details>
+
+## 角色管理
+
+<details>
+<summary>点击展开</summary>
+PostgreSQL 的用户与权限管理是数据库安全的重要组成部分，理解其机制可以有效控制访问权限、防止数据泄露与误操作
+
+**角色**
+
+PostgreSQL中用户和组统一称为角色：
+
++ 用户：能登录系统的角色，带 `LOGIN` 属性
++ 组（Group）：不能登录，用来授权多个用户（不带 `LOGIN`）
+
+> 一个 Role 可以既是用户又是组，只取决于是否有 `LOGIN` 权限
+>
+
+**用户管理相关命令**
+
+postgres 提供了程序 createuser 和 dropuser 作为这些 SQL 命令的包装器，可以从 shell 命令行调用
+
+创建角色
+```sql
+CREATE ROLE name; -- 创建角色
+
+CREATE ROLE alice LOGIN PASSWORD '123456'; -- 创建可登录的用户
+
+CREATE ROLE admin SUPERUSER LOGIN PASSWORD 'securepass'; -- 创建超级用户
+
+CREATE ROLE dev_team; -- 创建组角色
+
+CREATE ROLE bob LOGIN CREATEDB PASSWORD 'bobpwd'; -- 创建用户并允许创建数据库
+```
+
+修改角色属性
+```sql
+-- 赋予创建数据库权限
+ALTER ROLE alice CREATEDB;
+
+-- 修改密码
+ALTER ROLE alice PASSWORD 'newpass';
+
+-- 撤销登录权限
+ALTER ROLE alice NOLOGIN;
+```
+
+查询角色
+```sql
+SELECT rolname FROM pg_roles; -- 现有角色的集合
+
+SELECT rolname FROM pg_roles WHERE rolcanlogin; -- 查看可以登录的角色
+```
+
+删除角色
+
+由于角色可以拥有数据库对象，并且可以拥有访问其他对象的权限，因此删除角色通常不仅仅是快速执行 DROP ROLE 的问题。必须首先删除该角色拥有的任何对象，或将其重新分配给其他所有者；并且必须撤销授予该角色的任何权限。
+
+简而言之，删除曾用于拥有对象的角色的最通用方法是
+
+```sql
+DROP ROLE name; -- 删除角色
+REASSIGN OWNED BY doomed_role TO successor_role;
+DROP OWNED BY doomed_role;
+-- repeat the above commands in each database of the cluster
+DROP ROLE doomed_role;
+```
+
+**权限控制（GRANT / REVOKE）**
+
+支持的权限类型（不同对象支持的权限不同）：
+| 对象   | 权限类型                                                        |
+| ------ | --------------------------------------------------------------- |
+| 数据库 | `CONNECT`, `CREATE`, `TEMPORARY`                                |
+| Schema | `USAGE`, `CREATE`                                               |
+| 表     | `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `REFERENCES`, `TRIGGER` |
+| 序列   | `USAGE`, `SELECT`, `UPDATE`                                     |
+| 函数   | `EXECUTE`                                                       |
+
+
+GRANT 权限
+```sql
+-- 授权用户对表的读写权限
+GRANT SELECT, INSERT, UPDATE ON users TO alice;
+
+-- 授权对数据库的连接权限
+GRANT CONNECT ON DATABASE mydb TO alice;
+
+-- 授权使用 schema
+GRANT USAGE ON SCHEMA public TO alice;
+
+-- 授权执行函数
+GRANT EXECUTE ON FUNCTION add_user(text, text) TO alice;
+```
+
+REVOKE 权限
+```sql
+-- 撤销读取权限
+REVOKE SELECT ON users FROM alice;
+
+-- 撤销对数据库的连接权限
+REVOKE CONNECT ON DATABASE mydb FROM alice;
+```
+
+授权给组角色
+```sql
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO dev_team;
+
+-- 将用户添加到组
+GRANT dev_team TO alice;
+```
+
+**默认权限控制**
+
+默认权限
++ 所有新建对象的所有权属于创建者
++ 除非授权，其他角色无法访问
+
+**修改默认权限（ALTER DEFAULT PRIVILEGES）**
+
+```sql
+-- 所有未来新建的表都授予 dev_team SELECT 权限
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT SELECT ON TABLES TO dev_team;
+```
+
+**对象所有权**
+
++ 每个表、视图、函数、序列都有一个拥有者
++ 拥有者有所有权限（即使没有显式 GRANT）
++ 可以改变所有权：
+
+```sql
+ALTER TABLE users OWNER TO bob;
+```
+
+**安全机制与最佳实践**
+
+pg_hba.conf 配置认证方式，设置用户从哪些 IP 登录，采用什么方式：
+
+```plain
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+host    all             all             0.0.0.0/0               md5
+```
+
+常见 `METHOD`：
+
++ `trust`：无条件允许
++ `md5`：密码认证
++ `scram-sha-256`：更安全的加密
++ `peer`：操作系统用户认证
+
 
 </details>
