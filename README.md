@@ -7,7 +7,7 @@
 - [安装数据库](#安装数据库)
 - [SQL 风格](#sql-风格)
 - [查看运行参数](#查看运行参数)
-- [自定义参数](#自定义参数)
+- [自定义运行参数](#自定义运行参数)
 - [常用数据类型](#常用数据类型)
 - [常用函数](#常用函数)
 - [连接语句](#连接语句)
@@ -189,7 +189,7 @@ SHOW ALL LIKE '%log%';
 ```
 </details>
 
-## 自定义参数
+## 自定义运行参数
 
 <details>
 <summary>点击展开</summary>
@@ -673,8 +673,6 @@ CROSS JOIN scores sc;
 <summary>点击展开</summary>
 </br>
 
-**简介**
-
 PostgreSQL 事务处理（Transaction Processing）是指在数据库中执行一系列 SQL 语句，使其成为一个不可分割的操作单元，即 要么全部执行成功，要么全部回滚，以确保数据的一致性和完整性
 
 **准备工作**
@@ -934,8 +932,6 @@ SET AUTOCOMMIT TO OFF;
 <details>
     <summary>点击展开</summary>
 
-**简介**
-
 PostgreSQL 的触发器 Trigger 是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数（触发器函数）。它常用于 数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景
 
 **触发器的构成**
@@ -1088,13 +1084,9 @@ DROP FUNCTION IF EXISTS log_user_insert();
 <details>
 <summary>点击展开</summary>
 
-**简介**
-
 PostgreSQL 中的存储过程，是一种在数据库中定义的可重复使用的程序单元，用于封装复杂的业务逻辑和数据处理操作，类似编程语言的函数
 
 **示例**
-
-简单示例
 
 + 创建存储过程
 
@@ -1271,9 +1263,9 @@ GRANT USAGE ON SCHEMA finance TO bob;
 
 <details>
 <summary>点击展开</summary>
+
 PostgreSQL 的用户与权限管理是数据库安全的重要组成部分，理解其机制可以有效控制访问权限、防止数据泄露与误操作
 
-**角色**
 
 PostgreSQL中用户和组统一称为角色：
 
@@ -1416,6 +1408,5 @@ host    all             all             0.0.0.0/0               md5
 + `md5`：密码认证
 + `scram-sha-256`：更安全的加密
 + `peer`：操作系统用户认证
-
 
 </details>
