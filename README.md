@@ -37,7 +37,7 @@ WHERE status = 'active';
 ```
 
 **每个子句独占一行，逻辑清晰**
-G
+
 ```sql
 SELECT id, name, email
 FROM customers
