@@ -112,6 +112,8 @@ FROM orders o
 JOIN customers c ON o.customer_id = c.id
 WHERE o.status = 'completed';
 ```
+[返回顶部](#top)
+
 </details>
 
 ## 查看运行参数
@@ -188,6 +190,7 @@ SHOW ALL LIKE 'max_%';
 SHOW ALL LIKE '%buffer%';
 SHOW ALL LIKE '%log%';
 ```
+[返回顶部](#top)
 </details>
 
 ## 自定义运行参数
@@ -207,6 +210,9 @@ SHOW config_file;
 ```
 
 修改配置文件并保存，重启数据库
+
+[返回顶部](#top)
+
 </details>
 
 ## 常用数据类型
@@ -323,6 +329,8 @@ CREATE TABLE users (
 -- 查看所有已注册的类型（系统 + 自定义）
 SELECT typname, typtype, typcategory FROM pg_type;
 ```
+
+[返回顶部](#top)
 
 </details>
 
@@ -503,6 +511,9 @@ SELECT SUM(salary) FROM employees; -- 工资总和
 
 SELECT STRING_AGG(name, ', ') FROM users; -- 拼接字符串
 ```
+
+[返回顶部](#top)
+
 </details>
 
 ## 连接语句 
@@ -665,6 +676,7 @@ CROSS JOIN scores sc;
 | 3   | Charlie | 2          | 88    |
 | 3   | Charlie | 4          | 70    |
 
+[返回顶部](#top)
 
 </details>
 
@@ -926,6 +938,8 @@ PostgreSQL 默认开启自动提交模式，即每条 SQL 语句都会被自动�
 SET AUTOCOMMIT TO OFF;
 ```
 
+[返回顶部](#top)
+
 </details>
 
 ## 触发器
@@ -1078,6 +1092,9 @@ DROP TRIGGER IF EXISTS user_insert_trigger ON users;
 ```sql
 DROP FUNCTION IF EXISTS log_user_insert();
 ```
+
+[返回顶部](#top)
+
 </details>
 
 ## 存储过程
@@ -1159,6 +1176,8 @@ $$;
 ```sql
 DROP PROCEDURE xxxxx(TEXT, NUMERIC);
 ```
+
+[返回顶部](#top)
 
 </details>
 
@@ -1257,6 +1276,8 @@ GRANT USAGE ON SCHEMA finance TO bob;
 
 + `USAGE` 权限：可以访问 schema 中的对象
 + `CREATE` 权限：可以在 schema 中新建对象
+
+[返回顶部](#top)
 
 </details>
 
@@ -1410,6 +1431,9 @@ host    all             all             0.0.0.0/0               md5
 + `scram-sha-256`：更安全的加密
 + `peer`：操作系统用户认证
 
+
+[返回顶部](#top)
+
 </details>
 
 ## 客户端认证
@@ -1491,5 +1515,8 @@ host    all     all     0.0.0.0/0           reject
 **顺序很重要！**  
 
 PostgreSQL 会从上到下逐行匹配，匹配到第一个满足条件的规则就执行。所以允许规则要写在前面，拒绝规则写在后面。
+
+
+[返回顶部](#top)
 
 </details>
