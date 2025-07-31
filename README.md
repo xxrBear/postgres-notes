@@ -23,7 +23,7 @@
 
 ## 安装数据库
 
-推荐使用官方安装包，前往[下载页](https://www.postgresql.org/download/)下载对应系统的安装包
+推荐使用官方安装包，前往[下载页](https://www.postgres.org/download/)下载对应系统的安装包
 
 ## SQL 风格
 <details>
@@ -122,12 +122,12 @@ WHERE o.status = 'completed';
 <details>
 <summary>点击展开</summary>
 </br>
-在 PostgreSQL 中，SHOW 命令用于 查看当前数据库的运行时参数配置
+在 postgres 中，SHOW 命令用于 查看当前数据库的运行时参数配置
 
 **性能与内存相关**
 
 ```sql
-SHOW shared_buffers;                 -- PostgreSQL 用于缓存数据块的内存
+SHOW shared_buffers;                 -- postgres 用于缓存数据块的内存
 SHOW work_mem;                       -- 每个排序、哈希操作的内存大小
 SHOW maintenance_work_mem;          -- 维护操作（如VACUUM, CREATE INDEX）使用的内存
 SHOW effective_cache_size;          -- 操作系统文件缓存的估计值
@@ -200,7 +200,7 @@ SHOW ALL LIKE '%log%';
 <details>
 <summary>点击展开</summary>
 </br>
-PostgreSQL 安装后的默认配置通常并不适合生产环境的高性能需求，默认配置为了兼容低配置机器（如 512MB 内存的老机器），保守设置
+postgres 安装后的默认配置通常并不适合生产环境的高性能需求，默认配置为了兼容低配置机器（如 512MB 内存的老机器），保守设置
 
 推荐使用：[PGTune](https://pgtune.leopard.in.ua/)
 
@@ -349,9 +349,9 @@ SELECT typname, typtype, typcategory FROM pg_type;
 ```sql
 SELECT LENGTH('hello');       -- 5  获取字符串长度
 
-SELECT LEFT('PostgreSQL', 4); -- 'Post'  获取左侧 4 个字符
+SELECT LEFT('postgres', 4); -- 'Post'  获取左侧 4 个字符
 
-SELECT RIGHT('PostgreSQL', 4);-- 'SQL'   获取右侧 4 个字符
+SELECT RIGHT('postgres', 4);-- 'SQL'   获取右侧 4 个字符
 
 SELECT CONCAT('Hello', ' ', 'World'); -- 'Hello World'  字符串拼接
 
@@ -378,11 +378,11 @@ SELECT RTRIM('hello  ');   -- 'hello'  去掉右侧空格
 
 查找与替换
 ```sql
-SELECT POSITION('SQL' IN 'PostgreSQL'); -- 9  查找子字符串位置
+SELECT POSITION('SQL' IN 'postgres'); -- 9  查找子字符串位置
 
-SELECT REPLACE('hello world', 'world', 'PostgreSQL'); -- 'hello PostgreSQL' 替换
+SELECT REPLACE('hello world', 'world', 'postgres'); -- 'hello postgres' 替换
 
-SELECT SUBSTRING('PostgreSQL' FROM 5 FOR 3); -- 'gre'  截取子字符串
+SELECT SUBSTRING('postgres' FROM 5 FOR 3); -- 'gre'  截取子字符串
 ```
 
 **日期和时间**
@@ -493,7 +493,7 @@ SELECT MD5('password'); -- 计算 MD5 哈希值
 
 SELECT PG_SLEEP(5); -- 让查询暂停 5 秒
 
-SELECT VERSION(); -- 获取 PostgreSQL 版本
+SELECT VERSION(); -- 获取 postgres 版本
 
 SELECT PG_SIZE_PRETTY(PG_DATABASE_SIZE('mydb')); -- 获取数据库大小
 ```
@@ -527,7 +527,7 @@ SELECT STRING_AGG(name, ', ') FROM users; -- 拼接字符串
 
 **内连接**
 
-在 PostgreSQL 中，INNER JOIN 的行为如下：
+在 postgres 中，INNER JOIN 的行为如下：
 
 > 只返回两个表中 满足 ON 条件 的匹配行
 
@@ -688,7 +688,7 @@ CROSS JOIN scores sc;
 <summary>点击展开</summary>
 </br>
 
-PostgreSQL 事务处理（Transaction Processing）是指在数据库中执行一系列 SQL 语句，使其成为一个不可分割的操作单元，即 要么全部执行成功，要么全部回滚，以确保数据的一致性和完整性
+postgres 事务处理（Transaction Processing）是指在数据库中执行一系列 SQL 语句，使其成为一个不可分割的操作单元，即 要么全部执行成功，要么全部回滚，以确保数据的一致性和完整性
 
 **准备工作**
 
@@ -749,7 +749,7 @@ COMMIT; -- 提交事务
 
 **事务隔离级别**
 
-在数据库中，事务隔离级别用于控制多个事务并发执行时的可见性，避免数据不一致的问题。PostgreSQL 遵循 ACID（原子性、一致性、隔离性、持久性） 原则，并提供四种事务隔离级别
+在数据库中，事务隔离级别用于控制多个事务并发执行时的可见性，避免数据不一致的问题。postgres 遵循 ACID（原子性、一致性、隔离性、持久性） 原则，并提供四种事务隔离级别
 
 | 隔离级别         | 脏读     | 不可重复读 | 幻读     |
 | ---------------- | -------- | ---------- | -------- |
@@ -763,7 +763,7 @@ COMMIT; -- 提交事务
 
 **读未提交/读已提交**
 
-PostgreSQL 不真正支持 **读未提交** 这个级别，而是当作 **读已提交**处理
+postgres 不真正支持 **读未提交** 这个级别，而是当作 **读已提交**处理
 
 即，就算你设置了这个级别，PG 数据库还是会使用 **读已提交** 级别事务隔离
 
@@ -895,7 +895,7 @@ COMMIT;
 ERROR: could not serialize access due to read/write dependencies among transactions
 ```
 
-PostgreSQL 发现两个事务虽然在一开始都看到工资小于 10000，但同时插入后将违反业务逻辑（工资总额实际超过了），所以**强制中止一个事务来防止幻读**
+postgres 发现两个事务虽然在一开始都看到工资小于 10000，但同时插入后将违反业务逻辑（工资总额实际超过了），所以**强制中止一个事务来防止幻读**
 
 > 这就是事务隔离级别 `SERIALIZABLE` 的意义：**在并发读写逻辑上模拟串行操作，保护业务语义的一致性。**
 
@@ -924,7 +924,7 @@ SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
 + 这会影响当前会话中的所有事务
 
-在 PostgreSQL 配置文件 `postgresql.conf` 设置（全局）
+在 postgres 配置文件 `postgres.conf` 设置（全局）
 
 ```sql
 default_transaction_isolation = 'read committed'
@@ -934,7 +934,7 @@ default_transaction_isolation = 'read committed'
 
 **自动提交**
 
-PostgreSQL 默认开启自动提交模式，即每条 SQL 语句都会被自动提交。如果要手动管理事务，需要显式使用 `BEGIN`
+postgres 默认开启自动提交模式，即每条 SQL 语句都会被自动提交。如果要手动管理事务，需要显式使用 `BEGIN`
 
 ```sql
 SET AUTOCOMMIT TO OFF;
@@ -949,7 +949,7 @@ SET AUTOCOMMIT TO OFF;
 <details>
     <summary>点击展开</summary>
 
-PostgreSQL 的触发器 Trigger 是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数（触发器函数）。它常用于 数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景
+postgres 的触发器 Trigger 是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数（触发器函数）。它常用于 数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景
 
 **触发器的构成**
 
@@ -980,7 +980,7 @@ PostgreSQL 的触发器 Trigger 是一类特殊的数据库对象，在表的 IN
 
 **创建触发器**
 
-PostgreSQL 触发器的创建需要两步：
+postgres 触发器的创建需要两步：
 
 - 编写触发器函数（必须返回 `TRIGGER` 类型）
 - 创建触发器并绑定到表
@@ -1104,7 +1104,7 @@ DROP FUNCTION IF EXISTS log_user_insert();
 <details>
 <summary>点击展开</summary>
 
-PostgreSQL 中的存储过程，是一种在数据库中定义的可重复使用的程序单元，用于封装复杂的业务逻辑和数据处理操作，类似编程语言的函数
+postgres 中的存储过程，是一种在数据库中定义的可重复使用的程序单元，用于封装复杂的业务逻辑和数据处理操作，类似编程语言的函数
 
 **示例**
 
@@ -1187,7 +1187,7 @@ DROP PROCEDURE xxxxx(TEXT, NUMERIC);
 <details>
 <summary>点击展开</summary>
 
-在 PostgreSQL 中，模式（schema）是一个逻辑命名空间，用来组织数据库中的对象，比如表、视图、函数、类型等
+在 postgres 中，模式（schema）是一个逻辑命名空间，用来组织数据库中的对象，比如表、视图、函数、类型等
 
 > schema 就像数据库里的“文件夹”或“命名空间”，用来隔离和管理不同的数据库对象，防止命名冲突
 >
@@ -1206,7 +1206,7 @@ CREATE TABLE sales.users (...);  -- 销售系统的用户表
 
 它们都叫 `users`，但因为放在不同的 schema 里，所以互不干扰
 
-**PostgreSQL 中的层次结构**
+**postgres 中的层次结构**
 
 ```plain
 一个数据库（database）
@@ -1222,7 +1222,7 @@ CREATE TABLE sales.users (...);  -- 销售系统的用户表
 
 **默认的 schema 是 public**
 
-如果你不写 schema 名，PostgreSQL 默认放到 `public` 里：
+如果你不写 schema 名，postgres 默认放到 `public` 里：
 
 ```sql
 CREATE TABLE test (id INT);
@@ -1256,12 +1256,12 @@ SET search_path TO my_schema, public;
 
 **Schema 的实际用途**
 
-| 用途                       | 说明                                                                |
-| -------------------------- | ------------------------------------------------------------------- |
-| 命名隔离                   | 不同模块/应用可以使用相同表名而不冲突                               |
-| 权限管理                   | 可以给不同 schema 设置不同的访问权限                                |
-| 多租户系统（multi-tenant） | 每个租户一个 schema，隔离数据                                       |
-| 扩展管理                   | PostgreSQL 的扩展经常安装在 `pg_catalog` 或 `extension_name` schema |
+| 用途                       | 说明                                                              |
+| -------------------------- | ----------------------------------------------------------------- |
+| 命名隔离                   | 不同模块/应用可以使用相同表名而不冲突                             |
+| 权限管理                   | 可以给不同 schema 设置不同的访问权限                              |
+| 多租户系统（multi-tenant） | 每个租户一个 schema，隔离数据                                     |
+| 扩展管理                   | postgres 的扩展经常安装在 `pg_catalog` 或 `extension_name` schema |
 
 
 **Schema 与权限控制**
@@ -1288,10 +1288,10 @@ GRANT USAGE ON SCHEMA finance TO bob;
 <details>
 <summary>点击展开</summary>
 
-PostgreSQL 的用户与权限管理是数据库安全的重要组成部分，理解其机制可以有效控制访问权限、防止数据泄露与误操作
+postgres 的用户与权限管理是数据库安全的重要组成部分，理解其机制可以有效控制访问权限、防止数据泄露与误操作
 
 
-PostgreSQL中用户和组统一称为角色：
+postgres中用户和组统一称为角色：
 
 + 用户：能登录系统的角色，带 `LOGIN` 属性
 + 组（Group）：不能登录，用来授权多个用户（不带 `LOGIN`）
@@ -1446,18 +1446,18 @@ host    all             all             0.0.0.0/0               md5
 
 认证是数据库服务器建立客户端身份的过程，并由此确定是否允许客户端应用程序（或运行客户端应用程序的用户）以所请求的数据库用户名进行连接。
 
-PostgreSQL 提供了多种不同的客户端认证方法。用于认证特定客户端连接的方法可以根据（客户端）主机地址、数据库和用户进行选择。
+postgres 提供了多种不同的客户端认证方法。用于认证特定客户端连接的方法可以根据（客户端）主机地址、数据库和用户进行选择。
 
 **配置文件**
 
-`pg_hba.conf` 是 PostgreSQL 中非常关键的一个配置文件，全名叫做：
+`pg_hba.conf` 是 postgres 中非常关键的一个配置文件，全名叫做：
 
-> PostgreSQL Host-Based Authentication Configuration File
+> postgres Host-Based Authentication Configuration File
 >
 
 它的作用是：
 
-> 控制谁可以连接 PostgreSQL、从哪里连接、用什么方式连接
+> 控制谁可以连接 postgres、从哪里连接、用什么方式连接
 
 + 查看所在配置文件目录
 
@@ -1470,8 +1470,8 @@ SHOW hba_file;
 | 功能点       | 说明                                          |
 | ------------ | --------------------------------------------- |
 | 认证方式控制 | 支持密码、GSSAPI、LDAP、证书等多种认证方式    |
-| 访问来源限制 | 可以限制 IP 地址或网段是否能连接 PostgreSQL   |
-| 用户限制     | 可以限制哪些 PostgreSQL 用户允许访问          |
+| 访问来源限制 | 可以限制 IP 地址或网段是否能连接 postgres     |
+| 用户限制     | 可以限制哪些 postgres 用户允许访问            |
 | 数据库限制   | 可以限制某些用户只允许访问某些数据库          |
 | 连接类型限制 | 支持本地（`local`）或远程（`host`）连接的区分 |
 
@@ -1487,7 +1487,7 @@ host    mydb      alice 192.168.1.0/24 md5
 | -------- | --------------------------------------------------------------------- |
 | TYPE     | `local`（Unix socket）、`host`（IPv4）、`hostssl`（SSL）、`hostnossl` |
 | DATABASE | 可为具体库名、`all`、`replication` 等                                 |
-| USER     | PostgreSQL 用户名，可为具体名或 `all`                                 |
+| USER     | postgres 用户名，可为具体名或 `all`                                   |
 | ADDRESS  | IP 地址范围，`127.0.0.1/32`、`0.0.0.0/0` 等                           |
 | METHOD   | 认证方式，比如 `trust`、`md5`、`scram-sha-256`、`peer`、`reject`      |
 
@@ -1516,7 +1516,7 @@ host    all     all     0.0.0.0/0           reject
 
 **顺序很重要！**  
 
-PostgreSQL 会从上到下逐行匹配，匹配到第一个满足条件的规则就执行。所以允许规则要写在前面，拒绝规则写在后面。
+postgres 会从上到下逐行匹配，匹配到第一个满足条件的规则就执行。所以允许规则要写在前面，拒绝规则写在后面。
 
 
 [返回顶部](#top)
@@ -1539,7 +1539,7 @@ SELECT content FROM test1 WHERE id = constant;
 
 索引还可以使带有搜索条件的 UPDATE 和 DELETE 命令受益。索引还可以用于连接搜索。因此，在作为连接条件一部分的列上定义的索引也可以显着加快带有连接的查询。
 
-要合理的设计和使用索引，不能盲目的使用，索引并非没有缺点。例如，在大表上创建索引可能需要很长时间。默认情况下，PostgreSQL 允许在创建索引的同时对表进行读取（SELECT 语句），但写入（INSERT，UPDATE，DELETE）将被阻塞，直到索引构建完成。在生产环境中，这通常是不可接受的。
+要合理的设计和使用索引，不能盲目的使用，索引并非没有缺点。例如，在大表上创建索引可能需要很长时间。默认情况下，postgres 允许在创建索引的同时对表进行读取（SELECT 语句），但写入（INSERT，UPDATE，DELETE）将被阻塞，直到索引构建完成。在生产环境中，这通常是不可接受的。
 
 **索引类型**
 
@@ -1554,7 +1554,7 @@ SELECT content FROM test1 WHERE id = constant;
 
 **表达式索引**
 
-在 PostgreSQL 中，表达式索引是一种特殊形式的索引，它不是直接建立在某个列上，而是建立在**列的计算结果（表达式）** 上
+在 postgres 中，表达式索引是一种特殊形式的索引，它不是直接建立在某个列上，而是建立在**列的计算结果（表达式）** 上
 ```sql
 CREATE INDEX idx_lower_name ON users (lower(name));
 ```
@@ -1594,9 +1594,9 @@ CREATE INDEX idx_active_users_email ON users(email) WHERE active = true;
 
 **postgres 的存储结构**
 
-PostgreSQL 的表和索引都是通过文件系统中的物理文件来存储的。每一个数据库对象（如表、索引等）都有自己的物理文件，文件结构和访问机制体现了 PostgreSQL 的核心架构理念。
+postgres 的表和索引都是通过文件系统中的物理文件来存储的。每一个数据库对象（如表、索引等）都有自己的物理文件，文件结构和访问机制体现了 postgres 的核心架构理念。
 
-PostgreSQL 默认采用堆表作为表的物理存储结构，它的核心特点是：数据以无特定顺序的形式直接存储在磁盘上的数据页中，每一行都独立存储，并通过一个唯一的**行指针（Tuple ID，简称 TID）** 定位。
+postgres 默认采用堆表作为表的物理存储结构，它的核心特点是：数据以无特定顺序的形式直接存储在磁盘上的数据页中，每一行都独立存储，并通过一个唯一的**行指针（Tuple ID，简称 TID）** 定位。
 
 **什么是回表**
 
@@ -1666,7 +1666,7 @@ SELECT col1 FROM my_table WHERE col2 = 'foo';
 
 表级锁是数据库中锁机制的一种，它会锁住整个表，从而限制对该表的访问，以保证数据一致性和并发控制。
 
-以下列表显示了可用的锁定模式以及 PostgreSQL 自动使用它们的上下文。 您还可以使用命令 LOCK 显式获取这些锁中的任何一个。 请记住，所有这些锁定模式都是表级锁定，即使名称中包含单词 “行”； 锁定模式的名称是历史遗留的。 在某种程度上，名称反映了每个锁定模式的典型用法 - 但语义都是相同的。 一个锁定模式和另一个锁定模式之间的唯一真正区别是每个模式与之冲突的锁定模式集。 两个事务不能同时在同一张表上持有冲突模式的锁。（但是，事务永远不会与自身冲突。例如，它可能获取 ACCESS EXCLUSIVE 锁，然后获取同一表上的 ACCESS SHARE 锁。）非冲突锁定模式可以由许多事务并发持有。特别要注意的是，某些锁定模式是自冲突的（例如，ACCESS EXCLUSIVE 锁不能一次由多个事务持有），而另一些则不是自冲突的（例如，ACCESS SHARE 锁可以由多个事务持有）。
+以下列表显示了可用的锁定模式以及 postgres 自动使用它们的上下文。 您还可以使用命令 LOCK 显式获取这些锁中的任何一个。 请记住，所有这些锁定模式都是表级锁定，即使名称中包含单词 “行”； 锁定模式的名称是历史遗留的。 在某种程度上，名称反映了每个锁定模式的典型用法 - 但语义都是相同的。 一个锁定模式和另一个锁定模式之间的唯一真正区别是每个模式与之冲突的锁定模式集。 两个事务不能同时在同一张表上持有冲突模式的锁。（但是，事务永远不会与自身冲突。例如，它可能获取 ACCESS EXCLUSIVE 锁，然后获取同一表上的 ACCESS SHARE 锁。）非冲突锁定模式可以由许多事务并发持有。特别要注意的是，某些锁定模式是自冲突的（例如，ACCESS EXCLUSIVE 锁不能一次由多个事务持有），而另一些则不是自冲突的（例如，ACCESS SHARE 锁可以由多个事务持有）。
 
 | 锁模式                      | 描述                                              |
 | --------------------------- | ------------------------------------------------- |
@@ -1781,9 +1781,9 @@ LOCK TABLE my_table IN ACCESS EXCLUSIVE MODE;
 
 **行级锁**
 
-在 postgres 中，**行级锁** 允许对表中的单独行进行并发访问控制，而不会锁住整个表。这使得多个事务可以安全地读取或更新同一个表中的不同记录，是 postgres 并发控制的核心机制之一。
+在 postgres 中，行级锁允许对表中的单独行进行并发访问控制，而不会锁住整个表。这使得多个事务可以安全地读取或更新同一个表中的不同记录，是 postgres 并发控制的核心机制之一。
 
-PostgreSQL 中的行级锁种类
+postgres 中的行级锁种类
 
 | 锁类型              | 获取方式                       | 会阻塞的操作类型                 | 说明                           |
 | ------------------- | ------------------------------ | -------------------------------- | ------------------------------ |
@@ -1830,9 +1830,9 @@ COMMIT;
 会话 B 才能继续执行。
 
 
-* PostgreSQL 行级锁是**隐式获取的**：例如 `UPDATE`、`DELETE` 语句天然会为涉及的行加 `FOR UPDATE` 类型的锁。
-* 行级锁**不会阻止其他事务插入**不同的行。
-* 与表级锁不同，行级锁**是细粒度控制**，适合高并发环境。
+* postgres 行级锁是隐式获取的：例如 `UPDATE`、`DELETE` 语句天然会为涉及的行加 `FOR UPDATE` 类型的锁。
+* 行级锁不会阻止其他事务插入不同的行。
+* 与表级锁不同，行级锁是细粒度控制，适合高并发环境。
 
 **页级锁**
 
@@ -1884,10 +1884,10 @@ UPDATE test_lock SET name = 'Z' WHERE id = 2;
 
 ```sql
 UPDATE test_lock SET name = 'W' WHERE id = 1;
--- 此处触发死锁！PostgreSQL 会检测到死锁并终止其中一个事务
+-- 此处触发死锁！postgres 会检测到死锁并终止其中一个事务
 ```
 
-PostgreSQL 会检测到死锁并报错终止一个事务，例如：
+postgres 会检测到死锁并报错终止一个事务，例如：
 
 ```text
 错误:  检测到死锁
@@ -1904,7 +1904,7 @@ CONTEXT:  当更新关系"test_lock"的元组(0, 1)时
 
 **咨询锁**
 
-在 postgres 中，**咨询锁** 是一种**用户控制的锁机制**，允许你在应用层通过“自定义的键”来加锁资源，而不是锁具体的数据库行或表。这类锁不会被数据库自动管理，只会由开发者手动获取和释放。
+在 postgres 中，咨询锁是一种用户控制的锁机制，允许你在应用层通过“自定义的键”来加锁资源，而不是锁具体的数据库行或表。这类锁不会被数据库自动管理，只会由开发者手动获取和释放。
 
 咨询锁的特点
 
@@ -1961,4 +1961,7 @@ SELECT pg_try_advisory_lock(100);  -- 返回 false，已被连接 1 锁住
 -- 连接 1：
 SELECT pg_advisory_unlock(100);    -- 释放锁
 ```
+
+[返回顶部](#top)
+
 </details>
