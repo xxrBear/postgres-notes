@@ -18,6 +18,7 @@
 - [角色管理](#角色管理)
 - [客户端认证](#客户端认证)
 - [索引](#索引)
+- [显示锁定](#显示锁定)
 
 
 ## 安装数据库
@@ -1652,4 +1653,312 @@ SELECT col1 FROM my_table WHERE col2 = 'foo';
 
 [返回顶部](#top)
 
+</details>
+
+## 显示锁定
+
+<details>
+<summary>点击展开</summary>
+
+</br>
+
+**行级锁**
+
+表级锁是数据库中锁机制的一种，它会锁住整个表，从而限制对该表的访问，以保证数据一致性和并发控制。
+
+以下列表显示了可用的锁定模式以及 PostgreSQL 自动使用它们的上下文。 您还可以使用命令 LOCK 显式获取这些锁中的任何一个。 请记住，所有这些锁定模式都是表级锁定，即使名称中包含单词 “行”； 锁定模式的名称是历史遗留的。 在某种程度上，名称反映了每个锁定模式的典型用法 - 但语义都是相同的。 一个锁定模式和另一个锁定模式之间的唯一真正区别是每个模式与之冲突的锁定模式集。 两个事务不能同时在同一张表上持有冲突模式的锁。（但是，事务永远不会与自身冲突。例如，它可能获取 ACCESS EXCLUSIVE 锁，然后获取同一表上的 ACCESS SHARE 锁。）非冲突锁定模式可以由许多事务并发持有。特别要注意的是，某些锁定模式是自冲突的（例如，ACCESS EXCLUSIVE 锁不能一次由多个事务持有），而另一些则不是自冲突的（例如，ACCESS SHARE 锁可以由多个事务持有）。
+
+| 锁模式                      | 描述                                              |
+| --------------------------- | ------------------------------------------------- |
+| ACCESS SHARE LOCK           | 查询锁，允许并发读取，阻止表被修改结构（DDL）     |
+| ROW SHARE LOCK              | SELECT FOR UPDATE 等语句使用，阻止对表的结构修改  |
+| ROW EXCLUSIVE LOCK          | INSERT/UPDATE/DELETE 操作获取，阻止结构修改       |
+| SHARE UPDATE EXCLUSIVE LOCK | ANALYZE 使用，阻止其他会修改表数据的操作          |
+| SHARE LOCK                  | 阻止其他事务修改表数据，但允许读取                |
+| SHARE ROW EXCLUSIVE LOCK    | 更严格，阻止大部分并发修改                        |
+| EXCLUSIVE LOCK              | 排他锁，阻止大部分操作                            |
+| ACCESS EXCLUSIVE LOCK       | 最强锁，阻止所有其他操作，通常由 DDL 语句自动获得 |
+
+举个例子：
+
+我们先创建一张测试表（如果你还没有）：
+
+```sql
+CREATE TABLE test_lock (
+    id SERIAL PRIMARY KEY,
+    name TEXT
+);
+```
+
+会话1
+```sql
+BEGIN;
+LOCK TABLE test_lock IN EXCLUSIVE MODE;
+-- 表被锁，阻止其他会话的写操作（INSERT、UPDATE、DELETE）
+```
+
+会话2
+尝试写入
+```sql
+INSERT INTO test_lock (name) VALUES ('Blocked Insert');
+-- 这个操作会被卡住，直到 Session 1 提交或回滚
+```
+
+会话1提交
+```sql
+COMMIT;
+```
+
+会话3，查看锁
+```sql
+SELECT
+    pid,
+    relation::regclass AS table,
+    mode,
+    granted
+FROM pg_locks
+JOIN pg_class ON pg_locks.relation = pg_class.oid
+WHERE relname = 'test_lock';
+```
+
+八种锁的获取方式
+
+1. `ACCESS SHARE`
+
+```sql
+SELECT * FROM my_table;
+-- 自动获取，不会阻止任何操作，除了 DDL（如 ALTER）
+```
+
+2. `ROW SHARE`
+
+```sql
+SELECT * FROM my_table FOR SHARE;
+-- 自动获取，允许写操作，但阻止某些 DDL
+```
+
+3. `ROW EXCLUSIVE`
+
+```sql
+INSERT INTO my_table VALUES (...);
+-- 自动获取，允许并发读，阻止结构更改
+```
+
+4. `SHARE UPDATE EXCLUSIVE`
+
+```sql
+VACUUM my_table;
+-- 自动获取，阻止并发写入，不阻止读取
+```
+
+5. `SHARE`
+
+```sql
+LOCK TABLE my_table IN SHARE MODE;
+-- 手动加锁，允许读，不允许写（INSERT/UPDATE/DELETE）
+```
+
+6. `SHARE ROW EXCLUSIVE`
+
+```sql
+CREATE INDEX CONCURRENTLY idx_name ON my_table (col);
+-- 自动获取，阻止很多操作（读写结构都受限）
+```
+
+7. `EXCLUSIVE`
+
+```sql
+LOCK TABLE my_table IN EXCLUSIVE MODE;
+-- 阻止其他写操作，也限制读（FOR UPDATE），但普通 SELECT 不受阻
+```
+
+8. `ACCESS EXCLUSIVE`
+
+```sql
+LOCK TABLE my_table IN ACCESS EXCLUSIVE MODE;
+-- 最强锁，阻止其他所有操作，包括 SELECT
+```
+
+**行级锁**
+
+在 postgres 中，**行级锁** 允许对表中的单独行进行并发访问控制，而不会锁住整个表。这使得多个事务可以安全地读取或更新同一个表中的不同记录，是 postgres 并发控制的核心机制之一。
+
+PostgreSQL 中的行级锁种类
+
+| 锁类型              | 获取方式                       | 会阻塞的操作类型                 | 说明                           |
+| ------------------- | ------------------------------ | -------------------------------- | ------------------------------ |
+| `FOR UPDATE`        | `SELECT ... FOR UPDATE`        | 其他更新/删除                    | 锁住选中行，防止别人更新或删除 |
+| `FOR NO KEY UPDATE` | `SELECT ... FOR NO KEY UPDATE` | 其他带有 KEY 变化的操作          | 更弱于 `FOR UPDATE`            |
+| `FOR SHARE`         | `SELECT ... FOR SHARE`         | 其他想要获得 `FOR UPDATE` 的事务 | 可共享读取                     |
+| `FOR KEY SHARE`     | `SELECT ... FOR KEY SHARE`     | 更强的写锁（如 `FOR UPDATE`）    | 可用于外键约束引用             |
+
+
+示例：使用行级锁阻止写入
+
+假设有如下数据表：
+
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name TEXT
+);
+INSERT INTO users (name) VALUES ('Alice'), ('Bob'), ('Charlie');
+```
+
+会话 A：加锁某一行
+
+```sql
+BEGIN;
+SELECT * FROM users WHERE id = 1 FOR UPDATE;
+-- 此时 id=1 被锁住
+```
+
+会话 B：尝试更新同一行（会被阻塞）
+
+```sql
+BEGIN;
+UPDATE users SET name = 'Eve' WHERE id = 1;
+-- 会一直等待，直到会话 A 提交或回滚
+```
+
+会话 A 提交或回滚后：
+
+```sql
+COMMIT;
+```
+
+会话 B 才能继续执行。
+
+
+* PostgreSQL 行级锁是**隐式获取的**：例如 `UPDATE`、`DELETE` 语句天然会为涉及的行加 `FOR UPDATE` 类型的锁。
+* 行级锁**不会阻止其他事务插入**不同的行。
+* 与表级锁不同，行级锁**是细粒度控制**，适合高并发环境。
+
+**页级锁**
+
+页级锁是 postgres 中一种较底层的锁机制，通常对用户不可见，也不常由用户显式控制。postgres 内部自动处理，用于保证数据页在访问或修改时的一致性和并发安全。
+
+**死锁**
+
+死锁是指多个事务互相等待对方释放锁，结果彼此都无法继续执行，最终 postgres 会检测到并中止其中一个事务。
+
+举个例子：
+
+
+准备一张测试表：
+
+```sql
+CREATE TABLE test_lock (
+    id INT PRIMARY KEY,
+    name TEXT
+);
+
+INSERT INTO test_lock VALUES (1, 'Alice'), (2, 'Bob');
+```
+
+
+会话1：
+
+```sql
+BEGIN;
+-- 锁住 id = 1 的行
+UPDATE test_lock SET name = 'X' WHERE id = 1;
+```
+
+会话2：
+
+```sql
+BEGIN;
+-- 锁住 id = 2 的行
+UPDATE test_lock SET name = 'Y' WHERE id = 2;
+```
+
+回到连接 1，尝试锁 id = 2：
+
+```sql
+UPDATE test_lock SET name = 'Z' WHERE id = 2;
+-- 此处会等待
+```
+
+回到连接 2，尝试锁 id = 1：
+
+```sql
+UPDATE test_lock SET name = 'W' WHERE id = 1;
+-- 此处触发死锁！PostgreSQL 会检测到死锁并终止其中一个事务
+```
+
+PostgreSQL 会检测到死锁并报错终止一个事务，例如：
+
+```text
+错误:  检测到死锁
+DETAIL:  进程9436等待在事务 830上的ShareLock; 由进程3472阻塞.
+进程3472等待在事务 831上的ShareLock; 由进程9436阻塞.
+HINT:  详细信息请查看服务器日志.
+CONTEXT:  当更新关系"test_lock"的元组(0, 1)时
+```
+
+
+1. 事务 1 先锁 A，再请求 B；
+2. 事务 2 先锁 B，再请求 A；
+3. postgres 检测到循环等待，主动终止其中一个事务。
+
+**咨询锁**
+
+在 postgres 中，**咨询锁** 是一种**用户控制的锁机制**，允许你在应用层通过“自定义的键”来加锁资源，而不是锁具体的数据库行或表。这类锁不会被数据库自动管理，只会由开发者手动获取和释放。
+
+咨询锁的特点
+
+| 特点         | 描述                                                 |
+| ------------ | ---------------------------------------------------- |
+| 类型         | 会话级（session-level）或事务级（transaction-level） |
+| 锁的目标     | 自定义的整数或 bigint 键值，不是具体数据表内容       |
+| 是否自动释放 | 会话级在连接断开时释放；事务级在事务结束时释放       |
+| 是否死锁检测 | 有，但取决于使用方式                                 |
+| 使用场景     | 分布式任务锁、排他逻辑、限流、资源控制等             |
+
+会话级锁（锁在整个连接上，直到 `pg_advisory_unlock` 或断开连接）
+
+```sql
+-- 获取锁（阻塞直到成功）
+SELECT pg_advisory_lock(1);
+
+-- 非阻塞获取锁（返回 true/false）
+SELECT pg_try_advisory_lock(1);
+
+-- 释放锁
+SELECT pg_advisory_unlock(1);
+```
+
+事务级锁（随事务自动释放）
+
+```sql
+BEGIN;
+
+-- 获取锁（阻塞）
+SELECT pg_advisory_xact_lock(1);
+
+-- 事务提交或回滚后，锁自动释放
+COMMIT;
+```
+
+支持两个整数作为锁键（组合资源更灵活）
+
+```sql
+-- 获取复合键锁（两个 int）
+SELECT pg_advisory_lock(123, 456);
+```
+
+
+模拟任务互斥执行
+
+```sql
+-- 连接 1：
+SELECT pg_try_advisory_lock(100);  -- 返回 true，成功获取锁
+
+-- 连接 2：
+SELECT pg_try_advisory_lock(100);  -- 返回 false，已被连接 1 锁住
+
+-- 连接 1：
+SELECT pg_advisory_unlock(100);    -- 释放锁
+```
 </details>
