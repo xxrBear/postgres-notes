@@ -10,6 +10,8 @@
 - [自定义运行参数](#自定义运行参数)
 - [常用数据类型](#常用数据类型)
 - [常用函数](#常用函数)
+- [窗口函数](#窗口函数)
+  - [4. `LAG()` / `LEAD()`：取前一行或后一行的值](#4-lag--lead取前一行或后一行的值)
 - [连接语句](#连接语句)
 - [事务处理](#事务处理)
 - [触发器](#触发器)
@@ -514,6 +516,139 @@ SELECT SUM(salary) FROM employees; -- 工资总和
 
 SELECT STRING_AGG(name, ', ') FROM users; -- 拼接字符串
 ```
+
+[返回顶部](#top)
+
+</details>
+
+
+## 窗口函数
+
+</details>
+
+<details>
+<summary>点击展开</summary>
+
+postgres 的窗口函数在实际开发中应用非常广泛，常用于统计分析、排名、累计计算、数据对比等。以下是常见窗口函数的种类和实际业务场景示例：
+
+我们可以通过一个简单的例子来展示 postgres窗口函数的各种典型实际应用场景。下面先创建一张示例表，并插入一些示例数据。
+
+
+示例表结构：`sales`
+
+```sql
+CREATE TABLE sales (
+    id SERIAL PRIMARY KEY,
+    employee TEXT,
+    region TEXT,
+    sales_amount INT,
+    sale_date DATE
+);
+```
+
+示例数据：
+
+```sql
+INSERT INTO sales (employee, region, sales_amount, sale_date) VALUES
+('Alice', 'East', 100, '2024-01-01'),
+('Alice', 'East', 150, '2024-01-02'),
+('Bob', 'East', 200, '2024-01-01'),
+('Bob', 'East', 300, '2024-01-02'),
+('Charlie', 'West', 400, '2024-01-01'),
+('Charlie', 'West', 350, '2024-01-02'),
+('Alice', 'East', 120, '2024-01-03'),
+('Bob', 'East', 250, '2024-01-03'),
+('Charlie', 'West', 500, '2024-01-03');
+```
+
+
+
+`ROW_NUMBER()`：为每个员工按时间排序编号
+
+```sql
+SELECT
+  employee,
+  sale_date,
+  sales_amount,
+  ROW_NUMBER() OVER (PARTITION BY employee ORDER BY sale_date) AS row_num
+FROM sales;
+```
+
+**实际用途**：查找每个员工的第一笔销售记录（可配合子查询使用）。
+
+
+`RANK()` 和 `DENSE_RANK()`：排名（有并列）
+
+```sql
+SELECT
+  employee,
+  sale_date,
+  sales_amount,
+  RANK() OVER (PARTITION BY sale_date ORDER BY sales_amount DESC) AS rank
+FROM sales;
+```
+
+**实际用途**：查每天销售额排名。
+
+
+`SUM()` over window：计算每人累计销售额
+
+```sql
+SELECT
+  employee,
+  sale_date,
+  sales_amount,
+  SUM(sales_amount) OVER (PARTITION BY employee ORDER BY sale_date) AS running_total
+FROM sales;
+```
+
+**实际用途**：生成报表，展示每个员工的逐日累计销售额。
+
+
+### 4. `LAG()` / `LEAD()`：取前一行或后一行的值
+
+```sql
+SELECT
+  employee,
+  sale_date,
+  sales_amount,
+  LAG(sales_amount) OVER (PARTITION BY employee ORDER BY sale_date) AS prev_day_sales,
+  LEAD(sales_amount) OVER (PARTITION BY employee ORDER BY sale_date) AS next_day_sales
+FROM sales;
+```
+
+**实际用途**：对比员工每日销售额的变化情况。
+
+---
+
+`NTILE(n)`：分桶，比如将销售记录分为 3 组
+
+```sql
+SELECT
+  employee,
+  sale_date,
+  sales_amount,
+  NTILE(3) OVER (ORDER BY sales_amount DESC) AS bucket
+FROM sales;
+```
+
+**实际用途**：将数据划分为 n 等分，比如根据销售额划分高、中、低档销售记录。
+
+
+`FIRST_VALUE()` / `LAST_VALUE()`：每人第一次/最后一次销售额
+
+```sql
+SELECT
+  employee,
+  sale_date,
+  sales_amount,
+  FIRST_VALUE(sales_amount) OVER (PARTITION BY employee ORDER BY sale_date) AS first_sale,
+  LAST_VALUE(sales_amount) OVER (PARTITION BY employee ORDER BY sale_date ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_sale
+FROM sales;
+```
+
+**实际用途**：了解某人一段时间内的首笔/末笔销售情况。
+
 
 [返回顶部](#top)
 
@@ -2186,6 +2321,3 @@ pg_dump 生成的转储脚本会自动应用以上几个但不是全部的指导
 
 
 [返回顶部](#top)
-
-
-</details>
