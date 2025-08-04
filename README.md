@@ -11,6 +11,7 @@
 - [常用数据类型](#常用数据类型)
 - [常用函数](#常用函数)
 - [窗口函数](#窗口函数)
+- [视图](#视图)
 - [连接语句](#连接语句)
 - [事务处理](#事务处理)
 - [触发器](#触发器)
@@ -201,8 +202,10 @@ SHOW ALL LIKE '%log%';
 
 <details>
 <summary>点击展开</summary>
+
 </br>
-postgres 安装后的默认配置通常并不适合生产环境的高性能需求，默认配置为了兼容低配置机器（如 512MB 内存的老机器），保守设置
+
+postgres 安装后的默认配置通常并不适合生产环境的高性能需求，默认配置为了兼容低配置机器，如 512MB 内存老机器
 
 推荐使用：[PGTune](https://pgtune.leopard.in.ua/)
 
@@ -221,9 +224,8 @@ SHOW config_file;
 
 ## 常用数据类型
 <details>
-<summary>
-点击展开    
-</summary>
+<summary>点击展开</summary>
+
 </br>
 
  **数值类型**
@@ -650,11 +652,219 @@ FROM sales;
 
 </details>
 
+## 视图
+
+<details>
+
+<summary>点击展开</summary>
+
+**什么是视图**
+
+视图是一个 **虚拟表**，其内容由一个 SELECT 查询定义，并在每次访问视图时执行查询
+
+```sql
+CREATE VIEW view_name AS
+SELECT column1, column2
+FROM table_name
+WHERE condition;
+```
+
+本质上是什么？
+
+* 就是一条保存下来的 SQL 查询语句
+* 并不存储数据，除非是物化视图
+* 在使用视图时，postgres 会将视图替换成对应的 SELECT 语句
+
+
+**视图的分类**
+
+| 类型       | 描述                                            | 是否持久化数据     |
+| ---------- | ----------------------------------------------- | ------------------ |
+| 普通视图   | 查询时实时执行 SQL                              | 不持久化           |
+| 可更新视图 | 特殊类型的普通视图，可以 `INSERT/UPDATE/DELETE` |                    |
+| 物化视图   | 将查询结果缓存                                  | 持久化，可定期刷新 |
+| 递归视图   | 使用 WITH RECURSIVE 创建递归层次结构            |                    |
+
+**创建视图**
+
+基本语法
+
+```sql
+CREATE VIEW employee_view AS
+SELECT id, name, salary FROM employees
+WHERE department = 'Sales';
+```
+
+带列名别名
+
+```sql
+CREATE VIEW employee_summary (emp_id, emp_name) AS
+SELECT id, name FROM employees;
+```
+
+替代 OR REPLACE
+
+```sql
+CREATE OR REPLACE VIEW employee_view AS
+SELECT id, name FROM employees WHERE active = true;
+```
+
+递归视图
+
+```sql
+WITH RECURSIVE subordinates AS (
+  SELECT id, manager_id FROM employees WHERE id = 1
+  UNION
+  SELECT e.id, e.manager_id
+  FROM employees e
+  JOIN subordinates s ON e.manager_id = s.id
+)
+SELECT * FROM subordinates;
+```
+
+
+**物化视图**
+
+定义
+
+* 是一种 **持久化的视图**，会保存查询结果；
+* 适合用于性能优化；
+* 需要手动 `REFRESH` 来更新内容。
+
+语法
+
+```sql
+CREATE MATERIALIZED VIEW mv_sales_summary AS
+SELECT department, SUM(amount) FROM sales
+GROUP BY department;
+```
+
+刷新数据
+
+```sql
+REFRESH MATERIALIZED VIEW mv_sales_summary;
+```
+
+带索引
+
+* 物化视图可以建立索引，提升性能
+
+
+**更新视图**
+
+默认规则
+
+PostgreSQL 会尝试将对视图的 `INSERT/UPDATE/DELETE` 映射到底层表：
+
+* 必须是 **单表视图**
+* 没有聚合、DISTINCT、LIMIT、GROUP BY、JOIN、窗口函数、子查询
+
+明确创建规则
+
+```sql
+CREATE VIEW updatable_view AS
+SELECT id, name FROM employees;
+
+CREATE FUNCTION insert_into_view() RETURNS trigger AS $$
+BEGIN
+  INSERT INTO employees (id, name) VALUES (NEW.id, NEW.name);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER instead_insert
+INSTEAD OF INSERT ON updatable_view
+FOR EACH ROW EXECUTE FUNCTION insert_into_view();
+```
+
+
+**查询视图**
+
+```sql
+SELECT * FROM employee_view;
+```
+
+你可以对视图使用 `WHERE`、`JOIN`、`ORDER BY` 等操作，就像普通表一样。
+
+
+**删除视图**
+
+```sql
+DROP VIEW employee_view;
+DROP MATERIALIZED VIEW mv_sales_summary;
+```
+
+加上 `IF EXISTS` 更安全：
+
+```sql
+DROP VIEW IF EXISTS employee_view;
+```
+
+
+**查看视图定义**
+
+查看视图 SQL
+
+```sql
+SELECT definition FROM pg_views WHERE viewname = 'employee_view';
+```
+
+或者使用 `psql` 工具：
+
+```bash
+\d+ employee_view
+```
+
+
+**视图的高级用法**
+
+嵌套视图（视图中调用视图）
+
+```sql
+CREATE VIEW sales_summary AS
+SELECT department, SUM(amount) AS total FROM sales GROUP BY department;
+
+CREATE VIEW top_departments AS
+SELECT * FROM sales_summary WHERE total > 100000;
+```
+
+与权限系统配合
+
+* 可以将视图作为权限隔离的手段：
+
+```sql
+CREATE VIEW public_employee_view AS
+SELECT name, position FROM employees;
+
+REVOKE SELECT ON employees FROM PUBLIC;
+GRANT SELECT ON public_employee_view TO readonly_user;
+```
+
+性能注意事项
+
+| 问题               | 解决方案                                  |
+| ------------------ | ----------------------------------------- |
+| 视图嵌套过深       | 查询优化困难，建议使用物化视图            |
+| 频繁查询但内容不变 | 使用 `Materialized View` 并定期 `REFRESH` |
+| 不能加索引         | 视图本身不能加索引，但**物化视图可以**    |
+
+
+系统表中视图的存储
+
+* `pg_views`: 所有普通视图
+* `pg_matviews`: 所有物化视图
+* `pg_class`: 存储所有表和视图的元数据
+* `pg_depend`: 视图与依赖对象的关联
+
+
+[返回顶部](#top)
+
+</details>
+
 ## 连接语句 
 <details>
-<summary>
-点击展开    
-</summary>
+<summary>点击展开</summary>
+
 </br>
 
 **内连接**
