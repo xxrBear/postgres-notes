@@ -22,6 +22,7 @@
 - [索引](#索引)
 - [显示锁定](#显示锁定)
 - [性能提示](#性能提示)
+- [功能扩展](#功能扩展)
 
 
 ## 安装数据库
@@ -2421,8 +2422,6 @@ ANALYZE your_table;
 | `ORDER BY column`               | `correlation` 决定是否走 Index Scan                     |
 | `JOIN` 操作                     | `n_distinct` 估算基数决定 Hash Join / Merge Join 等     |
 
----
-
 `pg_statistic` 原始数据结构
 
 `pg_stats` 是用户友好的视图，而 `pg_statistic` 是底层系统表，存储原始统计信息，比如：
@@ -2527,3 +2526,170 @@ pg_dump 生成的转储脚本会自动应用以上几个但不是全部的指导
 
 
 [返回顶部](#top)
+
+## 功能扩展
+
+<details>
+<summary>点击展开</summary>
+</br>
+
+**pg_stat_statements**
+
+插件简介
+
+`pg_stat_statements` 是postgres官方提供的**SQL 统计与分析插件**，用于记录数据库中执行的 SQL 语句的频率、耗时、IO 使用、命中率、调用次数等指标，是性能调优和瓶颈分析的重要工具
+
+> 它可以聚合结构相同但参数不同的 SQL，提供清晰的执行统计信息
+
+工作原理
+
+* postgres 在查询执行阶段自动将 SQL（归一化后）记录到 `pg_stat_statements` 内部结构中
+* 插件会对每条 SQL 生成**哈希值（queryid）**，以进行聚合
+* 所有数据存储在**内存中（shared memory）**，重启数据库后可保留（除非手动清空）
+* 插件记录包括：调用次数、执行时间、返回行数、IO 读写等指标
+
+安装与配置步骤
+
+步骤 1：修改 `postgresql.conf`
+
+```conf
+shared_preload_libraries = 'pg_stat_statements'
+```
+
+> 注意：该配置项属于“预加载库”，修改后**必须重启 PostgreSQL 实例**
+
+步骤 2：重启数据库
+
+```bash
+sudo systemctl restart postgresql
+# 或者手动
+pg_ctl restart -D /your/data/dir
+```
+
+步骤 3：在数据库中启用扩展
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+```
+
+步骤 4（可选）：查看是否启用成功
+
+```sql
+SELECT * FROM pg_extension WHERE extname = 'pg_stat_statements';
+```
+
+
+表结构字段说明
+
+```sql
+\d+ pg_stat_statements
+```
+
+以下是常见字段说明
+
+| 字段名                | 类型   | 含义                     |
+| --------------------- | ------ | ------------------------ |
+| `userid`              | oid    | 执行该 SQL 的用户 ID     |
+| `dbid`                | oid    | 执行 SQL 的数据库 ID     |
+| `queryid`             | bigint | SQL 的哈希 ID            |
+| `query`               | text   | 标准化后的 SQL（参数化） |
+| `calls`               | bigint | 执行次数                 |
+| `rows`                | bigint | 总共返回的行数           |
+| `total_exec_time`     | double | 总执行时间（毫秒）       |
+| `mean_exec_time`      | double | 平均执行时间             |
+| `min_exec_time`       | double | 最小执行时间             |
+| `max_exec_time`       | double | 最大执行时间             |
+| `stddev_exec_time`    | double | 执行时间的标准差         |
+| `shared_blks_hit`     | bigint | 共享缓冲区命中次数       |
+| `shared_blks_read`    | bigint | 从磁盘读共享块次数       |
+| `shared_blks_dirtied` | bigint | 被修改过的共享块数       |
+| `shared_blks_written` | bigint | 写入磁盘的共享块数       |
+| `temp_blks_read`      | bigint | 临时块读                 |
+| `temp_blks_written`   | bigint | 临时块写                 |
+| `local_blks_hit`      | bigint | 本地缓冲区命中           |
+| `blk_read_time`       | double | 读取块所花总时间（ms）   |
+| `blk_write_time`      | double | 写块总时间（ms）         |
+
+使用示例
+
+示例 1：查看执行时间最多的 SQL
+
+```sql
+SELECT query, calls, total_exec_time, mean_exec_time
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 10;
+```
+
+示例 2：查看调用次数最多的 SQL
+
+```sql
+SELECT query, calls
+FROM pg_stat_statements
+ORDER BY calls DESC
+LIMIT 10;
+```
+
+示例 3：查看平均执行时间最长的 SQL
+
+```sql
+SELECT query, mean_exec_time, calls
+FROM pg_stat_statements
+WHERE calls > 10
+ORDER BY mean_exec_time DESC
+LIMIT 10;
+```
+
+示例 4：查看 IO 密集型 SQL
+
+```sql
+SELECT query, shared_blks_read, shared_blks_hit, blk_read_time
+FROM pg_stat_statements
+ORDER BY shared_blks_read DESC
+LIMIT 10;
+```
+
+清空统计数据
+
+如果想清空统计数据（如部署后初始清理）：
+
+```sql
+SELECT pg_stat_statements_reset();
+```
+
+注意事项与最佳实践
+
+| 项目     | 建议                                                           |
+| -------- | -------------------------------------------------------------- |
+| 内存占用 | 默认最多记录 5000 条语句，可通过 `pg_stat_statements.max` 配置 |
+| 性能开销 | 插件有少量开销（微秒级），建议在生产环境启用，利远大于弊       |
+| 精准度   | SQL 参数会被归一化（? 占位），无法区分不同值，但可判断结构性能 |
+| 聚合方式 | 结构相同 SQL 会聚合，可结合 `queryid` 与日志进一步分析         |
+
+权限要求
+
+查询 `pg_stat_statements`：
+
+* 需要超级用户权限，或者
+* 被授予 `pg_read_all_stats` 角色：
+
+```sql
+GRANT pg_read_all_stats TO your_user;
+```
+
+
+相关参数配置
+
+在 `postgresql.conf` 中：
+
+```conf
+shared_preload_libraries = 'pg_stat_statements'
+pg_stat_statements.max = 10000           # 默认 5000，最大记录条数
+pg_stat_statements.track = all           # 可选 none / top / all
+pg_stat_statements.track_utility = on    # 是否统计 COPY、VACUUM 等语句
+pg_stat_statements.save = on             # 是否在重启后保留数据
+```
+
+[返回顶部](#top)
+
+</details>
