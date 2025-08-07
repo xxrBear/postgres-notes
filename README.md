@@ -10,7 +10,8 @@
 - [查看运行参数](#查看运行参数)
 - [自定义运行参数](#自定义运行参数)
 - [常用数据类型](#常用数据类型)
-- [常用函数](#常用函数)
+- [常用数据函数](#常用数据函数)
+- [常用表达式](#常用表达式)
 - [窗口函数](#窗口函数)
 - [视图](#视图)
 - [连接语句](#连接语句)
@@ -422,7 +423,7 @@ SELECT typname, typtype, typcategory FROM pg_type;
 </details>
 
 
-## 常用函数
+## 常用数据函数
 
 <details>
 <summary>点击展开</summary>
@@ -603,6 +604,153 @@ SELECT STRING_AGG(name, ', ') FROM users; -- 拼接字符串
 
 </details>
 
+## 常用表达式
+<details>
+<summary>
+点击展开
+</summary>
+
+</br>
+
+**条件表达式**
+
+常用条件表达式一览
+
+| 表达式     | 描述                                        |
+| ---------- | ------------------------------------------- |
+| `CASE`     | 通用的条件判断表达式                        |
+| `COALESCE` | 返回第一个非空值                            |
+| `NULLIF`   | 如果两个值相等则返回 NULL，否则返回第一个值 |
+| `GREATEST` | 返回多个表达式中最大的一个                  |
+| `LEAST`    | 返回多个表达式中最小的一个                  |
+
+`CASE` 表达式
+
+```sql
+SELECT
+  name,
+  age,
+  CASE
+    WHEN age < 18 THEN '未成年'
+    WHEN age BETWEEN 18 AND 60 THEN '成年人'
+    ELSE '老年人'
+  END AS age_group
+FROM users;
+```
+
+`COALESCE(expr1, expr2, ..., exprN)`
+
+返回第一个非空的值：
+
+```sql
+SELECT COALESCE(nickname, username, '匿名') AS display_name FROM users;
+```
+
+`NULLIF(expr1, expr2)`
+
+若两个值相等，则返回 `NULL`，否则返回 `expr1`：
+
+```sql
+SELECT NULLIF(score, 0) FROM exam_scores;
+```
+
+可用于避免除零错误
+
+```sql
+SELECT score / NULLIF(total, 0) FROM results;
+```
+
+`GREATEST(expr1, expr2, ..., exprN)`
+
+```sql
+SELECT GREATEST(price_1, price_2, price_3) AS max_price FROM products;
+```
+
+`LEAST(expr1, expr2, ..., exprN)`
+
+```sql
+SELECT LEAST(price_1, price_2, price_3) AS min_price FROM products;
+```
+
+**子查询表达式**
+
+`WHERE` 子句中的子查询
+
+示例：找出工资高于平均工资的员工
+
+```sql
+SELECT name, salary
+FROM employees
+WHERE salary > (
+    SELECT AVG(salary)
+    FROM employees
+);
+```
+
+`EXISTS` 子查询
+
+判断子查询是否有结果，返回布尔值。
+
+```sql
+SELECT name
+FROM users
+WHERE EXISTS (
+    SELECT 1 FROM orders WHERE orders.user_id = users.id
+);
+```
+
+`IN` 子查询
+
+```sql
+SELECT name
+FROM users
+WHERE id IN (
+    SELECT user_id FROM orders WHERE amount > 100
+);
+```
+
+`ANY` / `SOME`：至少一个成立
+
+```sql
+SELECT * FROM products
+WHERE price > ANY (
+    SELECT price FROM products WHERE category = 'books'
+);
+```
+
+`ALL`：全部都成立
+
+```sql
+SELECT * FROM products
+WHERE price > ALL (
+    SELECT price FROM products WHERE category = 'books'
+);
+```
+
+标量子查询
+
+如果子查询只返回一行一列，它可以用在任何接受值的地方。
+
+```sql
+SELECT name,
+       (SELECT MAX(score) FROM exams WHERE exams.user_id = users.id) AS max_score
+FROM users;
+```
+
+相关子查询
+
+子查询引用了外层查询的字段：
+
+```sql
+SELECT name
+FROM users u
+WHERE EXISTS (
+    SELECT 1 FROM orders o WHERE o.user_id = u.id AND o.amount > 100
+);
+```
+
+
+</details>
 
 ## 窗口函数
 
