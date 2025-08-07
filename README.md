@@ -2534,19 +2534,19 @@ pg_dump 生成的转储脚本会自动应用以上几个但不是全部的指导
 <summary>点击展开</summary>
 </br>
 
-**pg_stat_statements**
+**pg_stat_statements扩展插件**
 
 插件简介
 
-`pg_stat_statements` 是postgres官方提供的**SQL 统计与分析插件**，用于记录数据库中执行的 SQL 语句的频率、耗时、IO 使用、命中率、调用次数等指标，是性能调优和瓶颈分析的重要工具
+`pg_stat_statements`是`postgres`官方提供的 SQL 统计与分析插件，用于记录数据库中执行的 SQL 语句的频率、耗时、IO 使用、命中率、调用次数等指标，是性能调优和瓶颈分析的重要工具
 
 > 它可以聚合结构相同但参数不同的 SQL，提供清晰的执行统计信息
 
 工作原理
 
-* postgres 在查询执行阶段自动将 SQL（归一化后）记录到 `pg_stat_statements` 内部结构中
-* 插件会对每条 SQL 生成**哈希值（queryid）**，以进行聚合
-* 所有数据存储在**内存中（shared memory）**，重启数据库后可保留（除非手动清空）
+* postgres 在查询执行阶段自动将 SQL 记录到`pg_stat_statements`内部结构中
+* 插件会对每条 SQL 生成哈希值（queryid），以进行聚合
+* 所有数据存储在**内存中（shared memory）**，重启数据库后可保留，除非手动清空
 * 插件记录包括：调用次数、执行时间、返回行数、IO 读写等指标
 
 安装与配置步骤
@@ -2557,14 +2557,14 @@ pg_dump 生成的转储脚本会自动应用以上几个但不是全部的指导
 shared_preload_libraries = 'pg_stat_statements'
 ```
 
-> 注意：该配置项属于“预加载库”，修改后**必须重启 PostgreSQL 实例**
-
 步骤 2：重启数据库
 
 ```bash
-sudo systemctl restart postgresql
-# 或者手动
-pg_ctl restart -D /your/data/dir
+-- 需要知道数据目录的位置
+pg_ctl restart -D /your/data/dir;
+
+-- 查看数据目录的位置
+SHOW data_directory;
 ```
 
 步骤 3：在数据库中启用扩展
@@ -2573,16 +2573,18 @@ pg_ctl restart -D /your/data/dir
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 ```
 
-步骤 4（可选）：查看是否启用成功
+步骤 4：查看是否启用成功
 
 ```sql
 SELECT * FROM pg_extension WHERE extname = 'pg_stat_statements';
 ```
 
-
 表结构字段说明
 
 ```sql
+-- 使用psql查看
+\d pg_stat_statements
+-- 或者
 \d+ pg_stat_statements
 ```
 
@@ -2596,7 +2598,7 @@ SELECT * FROM pg_extension WHERE extname = 'pg_stat_statements';
 | `query`               | text   | 标准化后的 SQL（参数化） |
 | `calls`               | bigint | 执行次数                 |
 | `rows`                | bigint | 总共返回的行数           |
-| `total_exec_time`     | double | 总执行时间（毫秒）       |
+| `total_exec_time`     | double | 总执行时间（ms）         |
 | `mean_exec_time`      | double | 平均执行时间             |
 | `min_exec_time`       | double | 最小执行时间             |
 | `max_exec_time`       | double | 最大执行时间             |
@@ -2652,8 +2654,6 @@ LIMIT 10;
 
 清空统计数据
 
-如果想清空统计数据（如部署后初始清理）：
-
 ```sql
 SELECT pg_stat_statements_reset();
 ```
@@ -2671,13 +2671,11 @@ SELECT pg_stat_statements_reset();
 
 查询 `pg_stat_statements`：
 
-* 需要超级用户权限，或者
-* 被授予 `pg_read_all_stats` 角色：
+* 需要超级用户权限，或者被授予`pg_read_all_stats`角色
 
 ```sql
 GRANT pg_read_all_stats TO your_user;
 ```
-
 
 相关参数配置
 
@@ -2686,7 +2684,7 @@ GRANT pg_read_all_stats TO your_user;
 ```conf
 shared_preload_libraries = 'pg_stat_statements'
 pg_stat_statements.max = 10000           # 默认 5000，最大记录条数
-pg_stat_statements.track = all           # 可选 none / top / all
+pg_stat_statements.track = all           # 表示收集什么 SQL 执行的信息，可选 none / top / all
 pg_stat_statements.track_utility = on    # 是否统计 COPY、VACUUM 等语句
 pg_stat_statements.save = on             # 是否在重启后保留数据
 ```
