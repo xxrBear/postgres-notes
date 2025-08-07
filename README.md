@@ -689,7 +689,7 @@ WHERE salary > (
 
 `EXISTS` 子查询
 
-判断子查询是否有结果，返回布尔值。
+判断子查询是否有结果，返回布尔值
 
 ```sql
 SELECT name
@@ -698,6 +698,8 @@ WHERE EXISTS (
     SELECT 1 FROM orders WHERE orders.user_id = users.id
 );
 ```
+
+这条 SQL 语句的含义是：查出所有在 orders 表中至少有一条订单记录的用户的 name
 
 `IN` 子查询
 
@@ -749,6 +751,7 @@ WHERE EXISTS (
 );
 ```
 
+[返回顶部](#top)
 
 </details>
 
