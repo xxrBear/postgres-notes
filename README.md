@@ -2,7 +2,7 @@
 <img src="https://cdn.jsdelivr.net/gh/xxrBear/image//Hugo/202505152126346.png" height="200"/>
 </div>
 
-<h2>目录</h2>
+## 目录
 
 - [安装数据库](#安装数据库)
 - [SQL 风格](#sql-风格)
@@ -32,9 +32,6 @@
 推荐使用官方安装包，前往[下载页](https://www.postgres.org/download/)下载对应系统的安装包
 
 ## SQL 风格
-<details>
-<summary>点击展开</summary>
-</br>
   
 **关键字大写，字段/表名小写**
 
@@ -120,14 +117,10 @@ FROM orders o
 JOIN customers c ON o.customer_id = c.id
 WHERE o.status = 'completed';
 ```
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 命令行工具
-<details>
-<summary>点击展开</summary>
-
 </br>
 
 **简介**
@@ -199,14 +192,10 @@ mydb=#
 | `\conninfo`      | 显示当前连接信息                      |
 
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 查看运行参数
-<details>
-<summary>点击展开</summary>
-</br>
 在 postgres 中，SHOW 命令用于 查看当前数据库的运行时参数配置
 
 **性能与内存相关**
@@ -277,13 +266,9 @@ SHOW ALL LIKE 'max_%';
 SHOW ALL LIKE '%buffer%';
 SHOW ALL LIKE '%log%';
 ```
-[返回顶部](#top)
-</details>
+[返回目录](#目录)
 
 ## 自定义运行参数
-
-<details>
-<summary>点击展开</summary>
 
 </br>
 
@@ -300,14 +285,10 @@ SHOW config_file;
 
 修改配置文件并保存，重启数据库
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 常用数据类型
-<details>
-<summary>点击展开</summary>
-
 </br>
 
  **数值类型**
@@ -418,15 +399,12 @@ CREATE TABLE users (
 SELECT typname, typtype, typcategory FROM pg_type;
 ```
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 
 ## 常用数据函数
 
-<details>
-<summary>点击展开</summary>
 </br>
 
 **字符串函数**
@@ -600,15 +578,10 @@ SELECT SUM(salary) FROM employees; -- 工资总和
 SELECT STRING_AGG(name, ', ') FROM users; -- 拼接字符串
 ```
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 常用表达式
-<details>
-<summary>
-点击展开
-</summary>
 
 </br>
 
@@ -751,16 +724,11 @@ WHERE EXISTS (
 );
 ```
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 窗口函数
 
-</details>
-
-<details>
-<summary>点击展开</summary>
 
 postgres 的窗口函数在实际开发中应用非常广泛，常用于统计分析、排名、累计计算、数据对比等。以下是常见窗口函数的种类和实际业务场景示例：
 
@@ -880,15 +848,11 @@ FROM sales;
 **实际用途**：了解某人一段时间内的首笔/末笔销售情况。
 
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 视图
 
-<details>
-
-<summary>点击展开</summary>
 
 **什么是视图**
 
@@ -1089,13 +1053,10 @@ GRANT SELECT ON public_employee_view TO readonly_user;
 * `pg_depend`: 视图与依赖对象的关联
 
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 连接语句 
-<details>
-<summary>点击展开</summary>
 
 </br>
 
@@ -1252,14 +1213,11 @@ CROSS JOIN scores sc;
 | 3   | Charlie | 2          | 88    |
 | 3   | Charlie | 4          | 70    |
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 事务处理
 
-<details>
-<summary>点击展开</summary>
 </br>
 
 postgres 事务处理是指在数据库中执行一系列 SQL 语句，使其成为一个不可分割的操作单元，即 要么全部执行成功，要么全部回滚，以确保数据的一致性和完整性
@@ -1511,14 +1469,10 @@ postgres 默认开启自动提交模式，即每条 SQL 语句都会被自动提
 SET AUTOCOMMIT TO OFF;
 ```
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 触发器
-
-<details>
-    <summary>点击展开</summary>
 
 `postgres`的触发器`Trigger`是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数（触发器函数）。它常用于 数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景
 
@@ -1666,14 +1620,10 @@ DROP TRIGGER IF EXISTS user_insert_trigger ON users;
 DROP FUNCTION IF EXISTS log_user_insert();
 ```
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 存储过程
-
-<details>
-<summary>点击展开</summary>
 
 postgres 中的存储过程，是一种在数据库中定义的可重复使用的程序单元，用于封装复杂的业务逻辑和数据处理操作，类似编程语言的函数
 
@@ -1750,13 +1700,10 @@ $$;
 DROP PROCEDURE xxxxx(TEXT, NUMERIC);
 ```
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 模式管理
-<details>
-<summary>点击展开</summary>
 
 在 postgres 中，模式（schema）是一个逻辑命名空间，用来组织数据库中的对象，比如表、视图、函数、类型等
 
@@ -1850,14 +1797,11 @@ GRANT USAGE ON SCHEMA finance TO bob;
 + `USAGE` 权限：可以访问 schema 中的对象
 + `CREATE` 权限：可以在 schema 中新建对象
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 角色管理
 
-<details>
-<summary>点击展开</summary>
 
 postgres 的用户与权限管理是数据库安全的重要组成部分，理解其机制可以有效控制访问权限、防止数据泄露与误操作
 
@@ -2004,14 +1948,11 @@ host    all             all             0.0.0.0/0               md5
 + `peer`：操作系统用户认证
 
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 客户端认证
 
-<details>
-<summary>点击展开</summary>
 </br>
 
 认证是数据库服务器建立客户端身份的过程，并由此确定是否允许客户端应用程序（或运行客户端应用程序的用户）以所请求的数据库用户名进行连接。
@@ -2089,13 +2030,11 @@ host    all     all     0.0.0.0/0           reject
 postgres 会从上到下逐行匹配，匹配到第一个满足条件的规则就执行。所以允许规则要写在前面，拒绝规则写在后面。
 
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 索引
-<details>
-<summary>点击展开</summary>
+
 </br>
 
 **简介**
@@ -2221,16 +2160,11 @@ SELECT col1 FROM my_table WHERE col2 = 'foo';
 
 查看结果中是否有`Index Only Scan using my_index on my_table`等语句。
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 显示锁定
 
-<details>
-<summary>点击展开</summary>
-
-</br>
 
 **行级锁**
 
@@ -2536,16 +2470,11 @@ SELECT pg_try_advisory_lock(100);  -- 返回 false，已被连接 1 锁住
 SELECT pg_advisory_unlock(100);    -- 释放锁
 ```
 
-[返回顶部](#top)
+[返回目录](#目录)
 
-</details>
 
 ## 性能提示
 
-<details>
-<summary>点击展开</summary>
-
-</br>
 
 **查询计划**
 
@@ -2752,14 +2681,10 @@ pg_dump 生成的转储脚本会自动应用以上几个但不是全部的指导
 - 创建未记录的表以避免WAL写入，尽管这会使表无法防崩溃
 
 
-[返回顶部](#top)
-</details>
+[返回目录](#目录)
 
 ## 功能扩展
 
-<details>
-<summary>点击展开</summary>
-</br>
 
 **pg_stat_statements 扩展**
 
@@ -2916,6 +2841,4 @@ pg_stat_statements.track_utility = on    # 是否统计 COPY、VACUUM 等语句
 pg_stat_statements.save = on             # 是否在重启后保留数据
 ```
 
-[返回顶部](#top)
-
-</details>
+[返回目录](#目录)
