@@ -704,6 +704,318 @@ SELECT STRING_AGG(name, ', ') FROM users; -- 拼接字符串
 
 [返回目录](#目录)
 
+## 系统信息函数
+
+### 会话基本信息
+
+| 函数 / 变量                              | 说明                                         | 示例                                                                      |
+| ---------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------- |
+| `current_database()`                     | 当前会话所在的数据库名                       | `SELECT current_database();`                                              |
+| `current_schema()`                       | 当前搜索路径中的第一个 schema                | `SELECT current_schema();`                                                |
+| `current_schemas(include_implicit bool)` | 当前搜索路径中的所有 schema 列表             | `SELECT current_schemas(true);`                                           |
+| `current_user`                           | 当前会话的执行用户（可能受 `SET ROLE` 影响） | `SELECT current_user;`                                                    |
+| `session_user`                           | 会话初始用户（不会随 `SET ROLE` 变化）       | `SELECT session_user;`                                                    |
+| `user`                                   | 与 `current_user` 等价                       | `SELECT user;`                                                            |
+| `pg_backend_pid()`                       | 当前会话的后端进程 PID                       | `SELECT pg_backend_pid();`                                                |
+| `inet_client_addr()`                     | 客户端 IP 地址                               | `SELECT inet_client_addr();`                                              |
+| `inet_client_port()`                     | 客户端端口                                   | `SELECT inet_client_port();`                                              |
+| `inet_server_addr()`                     | 服务器 IP 地址                               | `SELECT inet_server_addr();`                                              |
+| `inet_server_port()`                     | 服务器端口                                   | `SELECT inet_server_port();`                                              |
+| `application_name` *(GUC)*               | 当前连接设置的应用名                         | `SHOW application_name;` 或 `SELECT current_setting('application_name');` |
+| `session_authorization`                  | 当前会话的授权用户名                         | `SHOW session_authorization;`                                             |
+
+**会话事务信息**
+
+| 函数                             | 说明                       | 示例                                                  |
+| -------------------------------- | -------------------------- | ----------------------------------------------------- |
+| `txid_current()`                 | 当前事务 ID（数值）        | `SELECT txid_current();`                              |
+| `txid_current_snapshot()`        | 当前事务快照（可见性信息） | `SELECT txid_current_snapshot();`                     |
+| `txid_snapshot_xmin('snapshot')` | 从快照取最小事务 ID        | `SELECT txid_snapshot_xmin(txid_current_snapshot());` |
+| `txid_snapshot_xmax('snapshot')` | 从快照取最大事务 ID        | `SELECT txid_snapshot_xmax(txid_current_snapshot());` |
+| `txid_snapshot_xip('snapshot')`  | 从快照取未提交事务列表     | `SELECT txid_snapshot_xip(txid_current_snapshot());`  |
+
+**会话运行状态**
+
+这些通常配合系统视图 `pg_stat_activity` 使用，函数直接获取有限信息：
+
+| 函数                                              | 说明                       | 示例                                                            |
+| ------------------------------------------------- | -------------------------- | --------------------------------------------------------------- |
+| `pg_stat_get_backend_pid(backend_id)`             | 获取后台进程 PID           | `SELECT pg_stat_get_backend_pid(1);`                            |
+| `pg_stat_get_backend_activity(backend_id)`        | 获取后台进程正在执行的 SQL | `SELECT pg_stat_get_backend_activity(pg_backend_pid());`        |
+| `pg_stat_get_backend_client_addr(backend_id)`     | 获取客户端 IP              | `SELECT pg_stat_get_backend_client_addr(pg_backend_pid());`     |
+| `pg_stat_get_backend_client_port(backend_id)`     | 获取客户端端口             | `SELECT pg_stat_get_backend_client_port(pg_backend_pid());`     |
+| `pg_stat_get_backend_start(backend_id)`           | 会话开始时间               | `SELECT pg_stat_get_backend_start(pg_backend_pid());`           |
+| `pg_stat_get_backend_xact_start(backend_id)`      | 事务开始时间               | `SELECT pg_stat_get_backend_xact_start(pg_backend_pid());`      |
+| `pg_stat_get_backend_wait_event(backend_id)`      | 当前等待的事件类型         | `SELECT pg_stat_get_backend_wait_event(pg_backend_pid());`      |
+| `pg_stat_get_backend_wait_event_type(backend_id)` | 等待事件大类               | `SELECT pg_stat_get_backend_wait_event_type(pg_backend_pid());` |
+
+> 这些 `pg_stat_get_backend_*` 函数大多是内部统计接口，实际用时更多人直接查
+
+```sql
+SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
+```
+
+**会话配置函数**
+
+| 函数                                     | 说明                 | 示例                                                          |
+| ---------------------------------------- | -------------------- | ------------------------------------------------------------- |
+| `current_setting('param')`               | 获取当前会话参数值   | `SELECT current_setting('search_path');`                      |
+| `set_config('param', 'value', is_local)` | 设置当前会话参数值   | `SELECT set_config('search_path', 'myschema,public', false);` |
+| `pg_show_all_settings()` *(>=17)*        | 列出所有当前会话设置 | `SELECT * FROM pg_show_all_settings();`                       |
+
+**会话时间与生命周期**
+
+| 函数                                | 说明                           | 示例                                 |
+| ----------------------------------- | ------------------------------ | ------------------------------------ |
+| `clock_timestamp()`                 | 当前实际时间（调用时立即取值） | `SELECT clock_timestamp();`          |
+| `statement_timestamp()`             | 当前 SQL 开始执行的时间        | `SELECT statement_timestamp();`      |
+| `transaction_timestamp()` / `now()` | 当前事务开始的时间             | `SELECT transaction_timestamp();`    |
+| `pg_postmaster_start_time()`        | 数据库服务启动时间             | `SELECT pg_postmaster_start_time();` |
+
+### 访问权限查询函数
+
+这些函数通常返回布尔值，用于判断当前用户（或指定用户）是否拥有对某个对象的权限
+
+**数据库权限函数**
+
+| 函数                                              | 说明                           | 示例                                                                          |
+| ------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `has_database_privilege(dbname, privilege)`       | 判断当前用户是否拥有数据库权限 | `SELECT has_database_privilege(current_user, current_database(), 'CONNECT');` |
+| `has_database_privilege(user, dbname, privilege)` | 判断指定用户是否拥有数据库权限 | `SELECT has_database_privilege('alice', 'mydb', 'CREATE');`                   |
+
+**可用的 privilege 类型**
+
+```
+CREATE      -- 创建模式（schema）
+CONNECT     -- 连接数据库
+TEMP        -- 创建临时表
+TEMPORARY   -- TEMP 的别名
+```
+
+**模式权限函数**
+
+| 函数                                                | 说明                         | 示例                                                      |
+| --------------------------------------------------- | ---------------------------- | --------------------------------------------------------- |
+| `has_schema_privilege(schemaname, privilege)`       | 判断当前用户是否拥有模式权限 | `SELECT has_schema_privilege('public', 'USAGE');`         |
+| `has_schema_privilege(user, schemaname, privilege)` | 判断指定用户是否拥有模式权限 | `SELECT has_schema_privilege('bob', 'public', 'CREATE');` |
+
+**可用的 privilege 类型**：
+
+```
+CREATE  -- 创建对象
+USAGE   -- 使用 schema 中的对象
+```
+
+**表/视图/序列权限函数**
+
+| 函数                                            | 说明                       | 示例                                                       |
+| ----------------------------------------------- | -------------------------- | ---------------------------------------------------------- |
+| `has_table_privilege(relname, privilege)`       | 判断当前用户是否拥有表权限 | `SELECT has_table_privilege('mytable', 'SELECT');`         |
+| `has_table_privilege(user, relname, privilege)` | 判断指定用户是否拥有表权限 | `SELECT has_table_privilege('alice', 'orders', 'INSERT');` |
+
+**可用的 privilege 类型**：
+
+```
+SELECT
+INSERT
+UPDATE
+DELETE
+TRUNCATE
+REFERENCES
+TRIGGER
+```
+
+> **注意**：这里的 `relname` 可以是表、视图、物化视图、序列、外部表等
+
+**列权限函数**
+
+| 函数                                                     | 说明                     | 示例                                                                 |
+| -------------------------------------------------------- | ------------------------ | -------------------------------------------------------------------- |
+| `has_column_privilege(relname, column, privilege)`       | 判断当前用户是否有列权限 | `SELECT has_column_privilege('mytable', 'price', 'UPDATE');`         |
+| `has_column_privilege(user, relname, column, privilege)` | 判断指定用户是否有列权限 | `SELECT has_column_privilege('bob', 'products', 'price', 'SELECT');` |
+
+**可用的 privilege 类型**：
+
+```
+SELECT
+INSERT
+UPDATE
+REFERENCES
+```
+
+**函数权限函数**
+
+| 函数                                                | 说明                       | 示例                                                                          |
+| --------------------------------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
+| `has_function_privilege(funcname, privilege)`       | 判断当前用户是否有函数权限 | `SELECT has_function_privilege('myfunc(int, text)', 'EXECUTE');`              |
+| `has_function_privilege(user, funcname, privilege)` | 判断指定用户是否有函数权限 | `SELECT has_function_privilege('alice', 'add_numbers(int, int)', 'EXECUTE');` |
+
+**可用的 privilege 类型**：
+
+```
+EXECUTE
+```
+
+**语言权限函数**
+
+| 函数                                                | 说明                       | 示例                                                        |
+| --------------------------------------------------- | -------------------------- | ----------------------------------------------------------- |
+| `has_language_privilege(langname, privilege)`       | 判断当前用户是否有语言权限 | `SELECT has_language_privilege('plpgsql', 'USAGE');`        |
+| `has_language_privilege(user, langname, privilege)` | 判断指定用户是否有语言权限 | `SELECT has_language_privilege('bob', 'plpgsql', 'USAGE');` |
+
+**可用的 privilege 类型**：
+
+```
+USAGE
+```
+
+**大型对象（Large Object）权限函数**
+
+| 函数                                                     | 说明                   | 示例                                                                         |
+| -------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------- |
+| `has_foreign_data_wrapper_privilege(fdwname, privilege)` | 判断 FDW 权限          | `SELECT has_foreign_data_wrapper_privilege('myfdw', 'USAGE');`               |
+| `has_foreign_server_privilege(servername, privilege)`    | 判断外部服务器权限     | `SELECT has_foreign_server_privilege('myserver', 'USAGE');`                  |
+| `has_foreign_table_privilege(relname, privilege)`        | 判断外部表权限         | `SELECT has_foreign_table_privilege('my_foreign_table', 'SELECT');`          |
+| `has_foreign_table_privilege(user, relname, privilege)`  | 判断指定用户外部表权限 | `SELECT has_foreign_table_privilege('alice', 'my_foreign_table', 'INSERT');` |
+| `has_largeobject_privilege(loid, privilege)`             | 判断大型对象权限       | `SELECT has_largeobject_privilege(12345, 'READ');`                           |
+
+**大型对象 privilege 类型**：
+
+```
+SELECT
+UPDATE
+INSERT
+DELETE
+READ
+WRITE
+```
+
+## 系统管理函数
+
+这些函数是 DBA 级工具，用于数据库维护、会话管理、锁管理、WAL 控制、统计信息重置等
+
+
+# 1. 会话与连接管理
+
+| 函数                        | 说明                                         | 示例                                              |
+| --------------------------- | -------------------------------------------- | ------------------------------------------------- |
+| `pg_cancel_backend(pid)`    | 取消指定 PID 的查询（但不终止会话）          | `SELECT pg_cancel_backend(12345);`                |
+| `pg_terminate_backend(pid)` | 终止指定 PID 的会话                          | `SELECT pg_terminate_backend(12345);`             |
+| `pg_reload_conf()`          | 重新加载配置文件（等价于 `pg_ctl reload`）   | `SELECT pg_reload_conf();`                        |
+| `pg_rotate_logfile()`       | 滚动 PostgreSQL 日志文件                     | `SELECT pg_rotate_logfile();`                     |
+| `pg_backend_pid()`          | 返回当前会话的 PID                           | `SELECT pg_backend_pid();`                        |
+| `pg_current_logfile()`      | 返回当前日志文件路径（`csvlog`、`stderr`等） | `SELECT pg_current_logfile();`                    |
+| `pg_stat_activity` (视图)   | 当前所有会话、状态、SQL                      | `SELECT pid, state, query FROM pg_stat_activity;` |
+| `pg_blocking_pids(pid)`     | 查看阻塞指定 PID 的会话                      | `SELECT pg_blocking_pids(12345);`                 |
+
+# 2. 数据库与表维护
+
+| 函数                                               | 说明                          | 示例                                                    |
+| -------------------------------------------------- | ----------------------------- | ------------------------------------------------------- |
+| `pg_stat_reset()`                                  | 重置所有统计信息              | `SELECT pg_stat_reset();`                               |
+| `pg_stat_reset_shared('bgwriter' \| 'wal' ...)`    | 重置共享统计信息              | `SELECT pg_stat_reset_shared('wal');`                   |
+| `pg_stat_reset_single_table_counters(rel_oid)`     | 重置指定表的统计信息          | `SELECT pg_stat_reset_single_table_counters(12345);`    |
+| `pg_stat_reset_single_function_counters(func_oid)` | 重置指定函数的统计信息        | `SELECT pg_stat_reset_single_function_counters(12345);` |
+| `pg_relation_size(relation)`                       | 表或索引的大小（不含 TOAST）  | `SELECT pg_relation_size('mytable');`                   |
+| `pg_total_relation_size(relation)`                 | 表的总大小（含 TOAST 和索引） | `SELECT pg_total_relation_size('mytable');`             |
+| `pg_table_size(relation)`                          | 表大小（含 TOAST，不含索引）  | `SELECT pg_table_size('mytable');`                      |
+| `pg_indexes_size(relation)`                        | 索引总大小                    | `SELECT pg_indexes_size('mytable');`                    |
+| `pg_size_pretty(bigint)`                           | 字节数格式化为可读形式        | `SELECT pg_size_pretty(1048576);`                       |
+| `pg_database_size(name)`                           | 数据库大小                    | `SELECT pg_database_size('mydb');`                      |
+| `pg_tablespace_size(name)`                         | 表空间大小                    | `SELECT pg_tablespace_size('pg_default');`              |
+
+# 3. 锁与事务管理
+
+| 函数                                                            | 说明                           | 示例                                    |
+| --------------------------------------------------------------- | ------------------------------ | --------------------------------------- |
+| `pg_try_advisory_lock(key)` / `pg_advisory_lock(key)`           | 获取会话级建议锁               | `SELECT pg_advisory_lock(12345);`       |
+| `pg_try_advisory_xact_lock(key)` / `pg_advisory_xact_lock(key)` | 获取事务级建议锁               | `SELECT pg_advisory_xact_lock(12345);`  |
+| `pg_advisory_unlock(key)` / `pg_advisory_unlock_all()`          | 释放建议锁                     | `SELECT pg_advisory_unlock(12345);`     |
+| `pg_blocking_pids(pid)`                                         | 查看阻塞当前 PID 的会话        | `SELECT pg_blocking_pids(12345);`       |
+| `pg_is_in_recovery()`                                           | 是否处于恢复模式（备用节点）   | `SELECT pg_is_in_recovery();`           |
+| `pg_safe_snapshot_export()` *(PG 17+)*                          | 导出一个可安全使用的快照       | (内部用，调用示例较少)                  |
+| `txid_current()`                                                | 当前事务 ID                    | `SELECT txid_current();`                |
+| `txid_current_snapshot()`                                       | 当前快照                       | `SELECT txid_current_snapshot();`       |
+| `txid_status(xid)`                                              | 事务状态（已提交/中止/进行中） | `SELECT txid_status(100);`              |
+| `pg_xact_commit_timestamp(xid)`                                 | 事务提交时间（需启用）         | `SELECT pg_xact_commit_timestamp(100);` |
+
+# 4. WAL 与归档管理
+
+| 函数                            | 说明                             | 示例                                                 |
+| ------------------------------- | -------------------------------- | ---------------------------------------------------- |
+| `pg_switch_wal()` *(PG 10+)*    | 立即切换 WAL 段                  | `SELECT pg_switch_wal();`                            |
+| `pg_create_restore_point(name)` | 创建恢复点（用于 PITR）          | `SELECT pg_create_restore_point('my_point');`        |
+| `pg_current_wal_lsn()`          | 当前 WAL LSN                     | `SELECT pg_current_wal_lsn();`                       |
+| `pg_last_wal_receive_lsn()`     | 上次接收到的 WAL LSN（备用节点） | `SELECT pg_last_wal_receive_lsn();`                  |
+| `pg_last_wal_replay_lsn()`      | 上次回放的 WAL LSN（备用节点）   | `SELECT pg_last_wal_replay_lsn();`                   |
+| `pg_current_wal_insert_lsn()`   | 当前 WAL 插入位置                | `SELECT pg_current_wal_insert_lsn();`                |
+| `pg_walfile_name(lsn)`          | 根据 LSN 获取 WAL 文件名         | `SELECT pg_walfile_name('0/16B6C50');`               |
+| `pg_walfile_name_offset(lsn)`   | 返回 WAL 文件名和文件内偏移量    | `SELECT * FROM pg_walfile_name_offset('0/16B6C50');` |
+| `pg_switch_xlog()` *(<=PG 9.6)* | 旧版本 WAL 切换函数              | `SELECT pg_switch_xlog();`                           |
+
+
+# 5. 统计与性能监控
+
+| 函数 / 视图                                        | 说明                       | 示例                                                              |
+| -------------------------------------------------- | -------------------------- | ----------------------------------------------------------------- |
+| `pg_stat_reset()`                                  | 重置统计信息               | `SELECT pg_stat_reset();`                                         |
+| `pg_stat_file(path, missing_ok)`                   | 获取服务器上文件的状态     | `SELECT * FROM pg_stat_file('postgresql.conf', true);`            |
+| `pg_ls_dir(dirname, missing_ok, include_dot_dirs)` | 列出目录内容               | `SELECT * FROM pg_ls_dir('pg_wal');`                              |
+| `pg_ls_waldir()`                                   | 列出 WAL 目录的文件        | `SELECT * FROM pg_ls_waldir();`                                   |
+| `pg_ls_archive_statusdir()`                        | 列出 WAL 归档状态文件      | `SELECT * FROM pg_ls_archive_statusdir();`                        |
+| `pg_read_file(filename, offset, length)`           | 读取服务器文件内容         | `SELECT pg_read_file('postgresql.conf', 0, 1000);`                |
+| `pg_read_binary_file(filename, offset, length)`    | 读取二进制文件             | `SELECT pg_read_binary_file('base/16384/12345', 0, 1024);`        |
+| `pg_read_file_v2(...)` *(PG 16+)*                  | 加强版文件读取             | (参数较多，示例较复杂，官方文档详见)                              |
+| `pg_stat_statements` *(扩展)*                      | SQL 执行统计（需启用扩展） | `SELECT * FROM pg_stat_statements ORDER BY total_exec_time DESC;` |
+| `pg_stat_io` *(PG 15+)*                            | I/O 统计                   | `SELECT * FROM pg_stat_io;`                                       |
+| `pg_stat_all_tables` / `pg_stat_all_indexes`       | 表 & 索引访问统计          | `SELECT * FROM pg_stat_all_tables;`                               |
+| `pg_statio_all_tables`                             | 表 I/O 命中率等            | `SELECT * FROM pg_statio_all_tables;`                             |
+
+
+# 6. 复制与备份
+
+| 函数 / 视图                                              | 说明                       | 示例                                                                     |
+| -------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------ |
+| `pg_create_physical_replication_slot(name)`              | 创建物理复制槽             | `SELECT pg_create_physical_replication_slot('slot1');`                   |
+| `pg_create_logical_replication_slot(name, plugin)`       | 创建逻辑复制槽             | `SELECT pg_create_logical_replication_slot('slot1', 'test_decoding');`   |
+| `pg_drop_replication_slot(name)`                         | 删除复制槽                 | `SELECT pg_drop_replication_slot('slot1');`                              |
+| `pg_replication_slot_advance(name, lsn)`                 | 推进复制槽位置             | `SELECT pg_replication_slot_advance('slot1', '0/16B6C50');`              |
+| `pg_replication_origin_create(name)`                     | 创建复制源                 | `SELECT pg_replication_origin_create('origin1');`                        |
+| `pg_replication_origin_drop(name)`                       | 删除复制源                 | `SELECT pg_replication_origin_drop('origin1');`                          |
+| `pg_replication_origin_advance(name, lsn)`               | 推进复制源位置             | `SELECT pg_replication_origin_advance('origin1', '0/16B6C50');`          |
+| `pg_start_backup(label, fast)` / `pg_stop_backup()`      | 执行基于文件系统的备份     | `SELECT pg_start_backup('label', true);` / `SELECT pg_stop_backup();`    |
+| `pg_backup_start_time()`                                 | 获取最后一次备份开始时间   | `SELECT pg_backup_start_time();`                                         |
+| `pg_replication_slots` (视图)                            | 当前复制槽信息             | `SELECT * FROM pg_replication_slots;`                                    |
+| `pg_stat_replication` (视图)                             | 主节点查看从节点状态       | `SELECT * FROM pg_stat_replication;`                                     |
+| `pg_last_wal_receive_lsn()` / `pg_last_wal_replay_lsn()` | 备用节点 WAL 接收/回放位置 | `SELECT pg_last_wal_receive_lsn();` / `SELECT pg_last_wal_replay_lsn();` |
+
+
+# 7. 角色与权限管理
+
+| 函数                                             | 说明                             | 示例                                                                       |
+| ------------------------------------------------ | -------------------------------- | -------------------------------------------------------------------------- |
+| `pg_has_role(role, privilege)`                   | 检查当前用户是否具有指定角色权限 | `SELECT pg_has_role('myrole', 'USAGE');`                                   |
+| `pg_has_any_role(role)`                          | 检查当前用户是否属于某个角色     | `SELECT pg_has_any_role('myrole');`                                        |
+| `pg_has_table_privilege(user, table, privilege)` | 检查表权限                       | `SELECT pg_has_table_privilege('user1', 'mytable', 'SELECT');`             |
+| `pg_has_sequence_privilege(...)`                 | 检查序列权限                     | `SELECT pg_has_sequence_privilege('user1', 'mysequence', 'USAGE');`        |
+| `pg_has_function_privilege(...)`                 | 检查函数权限                     | `SELECT pg_has_function_privilege('user1', 'myfunc(integer)', 'EXECUTE');` |
+| `pg_has_column_privilege(...)`                   |                                  |                                                                            |
+
+
+\| 检查列权限                      | `SELECT pg_has_column_privilege('user1', 'mytable', 'mycolumn', 'SELECT');` |
+
+# 8. 其他管理类函数
+
+| 函数                                      | 说明                             | 示例                                                       |
+| ----------------------------------------- | -------------------------------- | ---------------------------------------------------------- |
+| `pg_sleep(seconds)`                       | 让当前会话暂停指定秒数           | `SELECT pg_sleep(5);`                                      |
+| `pg_sleep_for(interval)`                  | 按时间间隔暂停                   | `SELECT pg_sleep_for('00:00:05');`                         |
+| `pg_sleep_until(timestamp)`               | 暂停到某个时间点                 | `SELECT pg_sleep_until('2025-01-01 00:00:00'::timestamp);` |
+| `pg_promote(wait_seconds, check_seconds)` | 提升 standby 节点为主节点        | `SELECT pg_promote();`                                     |
+| `pg_is_in_backup()`                       | 是否正在执行 `pg_start_backup()` | `SELECT pg_is_in_backup();`                                |
+| `pg_is_in_recovery()`                     | 是否处于恢复模式                 | `SELECT pg_is_in_recovery();`                              |
+| `pg_backup_start_time()`                  | 最后一次备份开始时间             | `SELECT pg_backup_start_time();`                           |
+
 
 ## 常用表达式
 
