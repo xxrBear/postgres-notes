@@ -112,7 +112,6 @@ WHERE o.status = 'completed';
 
 
 ## 命令行工具
-</br>
 
 **简介**
 
@@ -269,7 +268,7 @@ postgres 安装后的默认配置通常并不适合生产环境的高性能需�
 
 输入参数，直接复制配置参数
 
-查看PG服务配置文件所在位置
+查看 PG 服务配置文件所在位置
 ```sql
 SHOW config_file;
 ```
@@ -533,7 +532,7 @@ CREATE TABLE orders (
 
 **字符串函数**
 
-长度、截取、拼接
+- 长度、截取、拼接
 ```sql
 SELECT LENGTH('hello');       -- 5  获取字符串长度
 
@@ -546,7 +545,7 @@ SELECT CONCAT('Hello', ' ', 'World'); -- 'Hello World'  字符串拼接
 SELECT 'Hello' || ' World' as hello;  -- 'Hello World'  另一种拼接方式
 ```
 
-大小写转换
+- 大小写转换
 ```sql
 SELECT UPPER('hello'); -- 'HELLO' 转换为大写
 
@@ -555,7 +554,7 @@ SELECT LOWER('HELLO'); -- 'hello' 转换为小写
 SELECT INITCAP('hello world'); -- 'Hello World'  每个单词首字母大写
 ```
 
-去空格
+- 去空格
 ```sql
 SELECT TRIM('  hello  ');  -- 'hello'  去掉两端空格
 
@@ -564,7 +563,7 @@ SELECT LTRIM('  hello');   -- 'hello'  去掉左侧空格
 SELECT RTRIM('hello  ');   -- 'hello'  去掉右侧空格
 ```
 
-查找与替换
+- 查找与替换
 ```sql
 SELECT POSITION('SQL' IN 'postgres'); -- 9  查找子字符串位置
 
@@ -1152,7 +1151,6 @@ WHERE EXISTS (
 
 ## 窗口函数
 
-
 postgres 的窗口函数在实际开发中应用非常广泛，常用于统计分析、排名、累计计算、数据对比等。
 
 我们可以通过一个简单的例子来展示 postgres窗口函数的各种典型实际应用场景。下面先创建一张示例表，并插入一些示例数据。
@@ -1185,8 +1183,6 @@ INSERT INTO sales (employee, region, sales_amount, sale_date) VALUES
 ('Charlie', 'West', 500, '2024-01-03');
 ```
 
-
-
 `ROW_NUMBER()`：为每个员工按时间排序编号
 
 ```sql
@@ -1198,7 +1194,7 @@ SELECT
 FROM sales;
 ```
 
-**实际用途**：查找每个员工的第一笔销售记录（可配合子查询使用）。
+**实际用途**：查找每个员工的第一笔销售记录（可配合子查询使用）
 
 
 `RANK()` 和 `DENSE_RANK()`：排名（有并列）
@@ -1268,14 +1264,13 @@ SELECT
 FROM sales;
 ```
 
-**实际用途**：了解某人一段时间内的首笔/末笔销售情况。
+**实际用途**：了解某人一段时间内的首笔或末笔销售情况
 
 
 [返回目录](#目录)
 
 
 ## 视图
-
 
 **什么是视图**
 
@@ -1373,7 +1368,7 @@ REFRESH MATERIALIZED VIEW mv_sales_summary;
 
 默认规则
 
-PostgreSQL 会尝试将对视图的 `INSERT/UPDATE/DELETE` 映射到底层表：
+postgres 会尝试将对视图的 `INSERT/UPDATE/DELETE` 映射到底层表：
 
 * 必须是单表视图
 * 没有聚合、DISTINCT、LIMIT、GROUP BY、JOIN、窗口函数、子查询
@@ -1403,7 +1398,7 @@ FOR EACH ROW EXECUTE FUNCTION insert_into_view();
 SELECT * FROM employee_view;
 ```
 
-你可以对视图使用 `WHERE`、`JOIN`、`ORDER BY` 等操作，就像普通表一样。
+你可以对视图使用 `WHERE`、`JOIN`、`ORDER BY` 等操作，就像普通表一样
 
 
 **删除视图**
@@ -1419,7 +1414,6 @@ DROP MATERIALIZED VIEW mv_sales_summary;
 DROP VIEW IF EXISTS employee_view;
 ```
 
-
 **查看视图定义**
 
 查看视图 SQL
@@ -1433,7 +1427,6 @@ SELECT definition FROM pg_views WHERE viewname = 'employee_view';
 ```bash
 \d+ employee_view
 ```
-
 
 **视图的高级用法**
 
@@ -1811,7 +1804,6 @@ ROLLBACK TO sp2;
 COMMIT; -- 提交事务
 ```
 
-
 **事务隔离级别**
 
 在数据库中，事务隔离级别用于控制多个事务并发执行时的可见性，避免数据不一致的问题。postgres 遵循 ACID（原子性、一致性、隔离性、持久性） 原则，并提供四种事务隔离级别
@@ -2003,7 +1995,6 @@ SET AUTOCOMMIT TO OFF;
 ```
 
 [返回目录](#目录)
-
 
 ## 触发器
 
