@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://cdn.jsdelivr.net/gh/xxrBear/image//Hugo/202505152126346.png" height="200"/>
+    <img src="https://cdn.jsdelivr.net/gh/xxrBear/image/Hugo/202505152126346.png" height="200"/>
 </div>
 
 ## 目录
@@ -12,11 +12,12 @@
 | [自定义运行参数](#自定义运行参数) | [常用数据函数](#常用数据函数) | [存储过程](#存储过程)     |
 |                                   | [系统管理函数](#系统管理函数) | [模式管理](#模式管理)     |
 |                                   | [系统信息函数](#系统信息函数) | [角色管理](#角色管理)     |
-|                                   | [常用表达式](#常用表达式)     | [客户端认证](#客户端认证) |
-|                                   | [窗口函数](#窗口函数)         | [索引](#索引)             |
-|                                   | [视图](#视图)                 | [性能提示](#性能提示)     |
-|                                   | [连接语句](#连接语句)         | [功能扩展](#功能扩展)     |
-|                                   | [权限管理](#权限管理)         |                           |
+|                                   | [常用表达式](#常用表达式)     | [行安全策略](#行安全策略) |
+|                                   | [窗口函数](#窗口函数)         | [客户端认证](#客户端认证) |
+|                                   | [视图](#视图)                 | [索引](#索引)             |
+|                                   | [连接语句](#连接语句)         | [性能提示](#性能提示)     |
+|                                   | [权限管理](#权限管理)         | [功能扩展](#功能扩展)     |
+|                                   |                               |                           |
 
 ## 安装数据库
 
@@ -2326,10 +2327,9 @@ GRANT USAGE ON SCHEMA finance TO bob;
 
 ## 角色管理
 
+`postgres` 的用户与权限管理是数据库安全的重要组成部分，理解其机制可以有效控制访问权限、防止数据泄露与误操作
 
-postgres 的用户与权限管理是数据库安全的重要组成部分，理解其机制可以有效控制访问权限、防止数据泄露与误操作
-
-postgres中用户和组统一称为角色：
+`postgres` 中用户和组统一称为角色：
 
 + 用户：能登录系统的角色，带 `LOGIN` 属性
 + 组（Group）：不能登录，用来授权多个用户（不带 `LOGIN`）
@@ -2337,11 +2337,11 @@ postgres中用户和组统一称为角色：
 > 一个 Role 可以既是用户又是组，只取决于是否有 `LOGIN` 权限
 >
 
-**用户管理相关命令**
+### 用户管理相关命令
 
 postgres 提供了程序 createuser 和 dropuser 作为这些 SQL 命令的包装器，可以从 shell 命令行调用
 
-创建角色
+- 创建角色
 ```sql
 CREATE ROLE name; -- 创建角色
 
@@ -2354,7 +2354,7 @@ CREATE ROLE dev_team; -- 创建组角色
 CREATE ROLE bob LOGIN CREATEDB PASSWORD 'bobpwd'; -- 创建用户并允许创建数据库
 ```
 
-修改角色属性
+- 修改角色属性
 ```sql
 -- 赋予创建数据库权限
 ALTER ROLE alice CREATEDB;
@@ -2366,14 +2366,14 @@ ALTER ROLE alice PASSWORD 'newpass';
 ALTER ROLE alice NOLOGIN;
 ```
 
-查询角色
+- 查询角色
 ```sql
 SELECT rolname FROM pg_roles; -- 现有角色的集合
 
 SELECT rolname FROM pg_roles WHERE rolcanlogin; -- 查看可以登录的角色
 ```
 
-删除角色
+- 删除角色
 
 由于角色可以拥有数据库对象，并且可以拥有访问其他对象的权限，因此删除角色通常不仅仅是快速执行 DROP ROLE 的问题。必须首先删除该角色拥有的任何对象，或将其重新分配给其他所有者；并且必须撤销授予该角色的任何权限。
 
@@ -2387,7 +2387,7 @@ DROP OWNED BY doomed_role;
 DROP ROLE doomed_role;
 ```
 
-**权限控制（GRANT / REVOKE）**
+### 权限控制（GRANT / REVOKE）
 
 支持的权限类型（不同对象支持的权限不同）：
 | 对象   | 权限类型                                                        |
@@ -2399,7 +2399,7 @@ DROP ROLE doomed_role;
 | 函数   | `EXECUTE`                                                       |
 
 
-GRANT 权限
+- GRANT 权限
 ```sql
 -- 授权用户对表的读写权限
 GRANT SELECT, INSERT, UPDATE ON users TO alice;
@@ -2414,7 +2414,7 @@ GRANT USAGE ON SCHEMA public TO alice;
 GRANT EXECUTE ON FUNCTION add_user(text, text) TO alice;
 ```
 
-REVOKE 权限
+- REVOKE 权限
 ```sql
 -- 撤销读取权限
 REVOKE SELECT ON users FROM alice;
@@ -2423,7 +2423,7 @@ REVOKE SELECT ON users FROM alice;
 REVOKE CONNECT ON DATABASE mydb FROM alice;
 ```
 
-授权给组角色
+- 授权给组角色
 ```sql
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO dev_team;
 
@@ -2431,13 +2431,13 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO dev_team;
 GRANT dev_team TO alice;
 ```
 
-**默认权限控制**
+### 默认权限控制
 
 默认权限
 + 所有新建对象的所有权属于创建者
 + 除非授权，其他角色无法访问
 
-**修改默认权限（ALTER DEFAULT PRIVILEGES）**
+### 修改默认权限（ALTER DEFAULT PRIVILEGES）
 
 ```sql
 -- 所有未来新建的表都授予 dev_team SELECT 权限
@@ -2455,7 +2455,7 @@ GRANT SELECT ON TABLES TO dev_team;
 ALTER TABLE users OWNER TO bob;
 ```
 
-**安全机制与最佳实践**
+### 安全机制与最佳实践
 
 pg_hba.conf 配置认证方式，设置用户从哪些 IP 登录，采用什么方式：
 
@@ -2471,6 +2471,175 @@ host    all             all             0.0.0.0/0               md5
 + `scram-sha-256`：更安全的加密
 + `peer`：操作系统用户认证
 
+
+[返回目录](#目录)
+
+## 行安全策略
+
+### 简介
+
+除了通过 GRANT 提供的 SQL 标准权限系统之外，表还可以具有行安全策略，这些策略会根据用户限制哪些行可以通过普通查询返回，或者通过数据修改命令插入、更新或删除。此功能也称为行级安全性。默认情况下，表没有任何策略，因此，如果用户根据 SQL 权限系统拥有对表的访问权限，则该表中的所有行都可以平等地用于查询或更新。
+
+当在表上启用行安全性时，所有对表的正常访问，例如选择行或修改行，都必须由行安全策略允许。（但是，表的拥有者通常不受行安全策略的约束）如果该表不存在任何策略，则会使用默认的拒绝策略，这意味着没有任何行可见或可以修改。适用于整个表的操作（如 TRUNCATE 和 REFERENCES）不受行安全性的限制。
+
+行安全策略可以特定于命令、角色或两者。可以指定一个策略以应用于 ALL 命令，或者应用于 SELECT、INSERT、UPDATE 或 DELETE。可以将多个角色分配给给定的策略，并且应用正常的角色成员资格和继承规则。
+
+要根据策略指定哪些行可见或可修改，则需要一个返回布尔结果的表达式。此表达式将在用户查询中的任何条件或函数之前，针对每一行进行评估。（此规则的唯一例外是 leakproof 函数，这些函数保证不会泄漏信息；优化器可能会选择在行安全检查之前应用此类函数。）表达式未返回 true 的行将不会被处理。可以指定单独的表达式，以独立控制可见的行和允许修改的行。策略表达式作为查询的一部分运行，并具有运行查询的用户的权限，尽管可以使用安全定义者函数来访问调用用户无法访问的数据。
+
+超级用户和具有`BYPASSRLS`属性的角色在访问表时会绕过行安全系统。表的所有者通常也会绕过行安全性，但是表的所有者可以选择使用 `ALTER TABLE ... FORCE ROW LEVEL SECURITY` 来遵守行安全性。
+
+**启用和禁用行安全性以及向表中添加策略始终只是表所有者的特权**
+
+策略使用 `CREATE POLICY` 命令创建，使用 `ALTER POLICY` 命令修改，使用 `DROP POLICY` 命令删除。要启用和禁用给定表的行安全性，请使用 `ALTER TABLE` 命令
+
+每个策略都有一个名称，并且可以为一个表定义多个策略。由于策略是特定于表的，因此一个表的每个策略都必须具有唯一的名称。不同的表可以具有相同名称的策略。
+
+当多个策略应用于给定的查询时，它们会使用 OR（对于允许性策略，这是默认设置）或使用 AND（对于限制性策略）进行组合。这类似于给定角色具有其成员的所有角色的权限的规则。允许性策略和限制性策略将在下面进一步讨论
+
+### 第一个行安全策略
+对数据表启动行安全策略很简单，只需要先启用行安全策略，然后对这个表创建一个对应的策略便可以了。
+
+```sql
+CREATE TABLE accounts (manager text, company text, contact_email text);
+
+-- 启用行安全策略
+ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
+
+-- 创建策略
+CREATE POLICY account_managers ON accounts TO managers
+    USING (manager = current_user);
+```
+
+### 关于子句
+
+**USING 子句**
+
+作用：定义了 SELECT、UPDATE、DELETE 操作时，哪些行对当前用户是可见的（也就是说，行过滤条件）。
+
+应用场景：
+
+- 在执行 SELECT 查询时，只能看到满足 USING 条件的行。
+- 在执行 UPDATE 或 DELETE 时，只能修改或删除满足 USING 条件的行。
+
+简单理解：USING 是查询和修改时的行访问条件
+
+**WITH CHECK 子句**
+
+作用：定义了 INSERT 和 UPDATE 操作时，新插入或修改后的行必须满足的条件
+
+应用场景：
+
+- 插入新行时，必须满足 WITH CHECK 条件，否则插入失败。
+- 更新已有行时，更新后的新数据必须满足 WITH CHECK 条件，否则更新失败。
+
+简单理解：WITH CHECK 是写入和修改数据时的合法性校验条件
+
+### 生产上的示例
+
+- 准备工作
+
+```sql
+-- Simple passwd-file based example
+CREATE TABLE passwd (
+  user_name             text UNIQUE NOT NULL,
+  pwhash                text,
+  uid                   int  PRIMARY KEY,
+  gid                   int  NOT NULL,
+  real_name             text NOT NULL,
+  home_phone            text,
+  extra_info            text,
+  home_dir              text NOT NULL,
+  shell                 text NOT NULL
+);
+
+CREATE ROLE admin;  -- Administrator
+CREATE ROLE bob;    -- Normal user
+CREATE ROLE alice;  -- Normal user
+
+INSERT INTO passwd VALUES
+  ('admin','xxx',0,0,'Admin','111-222-3333',null,'/root','/bin/dash');
+INSERT INTO passwd VALUES
+  ('bob','xxx',1,1,'Bob','123-456-7890',null,'/home/bob','/bin/zsh');
+INSERT INTO passwd VALUES
+  ('alice','xxx',2,1,'Alice','098-765-4321',null,'/home/alice','/bin/zsh');
+
+-- Be sure to enable row-level security on the table
+ALTER TABLE passwd ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+-- Administrator can see all rows and add any rows
+CREATE POLICY admin_all ON passwd TO admin USING (true) WITH CHECK (true);
+
+-- Normal users can view all rows
+CREATE POLICY all_view ON passwd FOR SELECT USING (true);
+
+-- Normal users can update their own records, but
+-- limit which shells a normal user is allowed to set
+CREATE POLICY user_mod ON passwd FOR UPDATE
+  USING (current_user = user_name)
+  WITH CHECK (
+    current_user = user_name AND
+    shell IN ('/bin/bash','/bin/sh','/bin/dash','/bin/zsh','/bin/tcsh')
+  );
+
+-- Allow admin all normal rights
+GRANT SELECT, INSERT, UPDATE, DELETE ON passwd TO admin;
+
+-- Users only get select access on public columns
+GRANT SELECT
+  (user_name, uid, gid, real_name, home_phone, extra_info, home_dir, shell)
+  ON passwd TO public;
+
+-- Allow users to update certain columns
+GRANT UPDATE
+  (pwhash, real_name, home_phone, extra_info, shell)
+  ON passwd TO public;
+```
+
+- 测试
+
+让我们测试一下相关的行安全策略生效了没有
+
+```shell
+mydb=# set role admin;
+SET
+mydb=> table passwd;
+ user_name | pwhash | uid | gid | real_name |  home_phone  | extra_info |  home_dir   |   shell
+-----------+--------+-----+-----+-----------+--------------+------------+-------------+-----------
+ admin     | xxx    |   0 |   0 | Admin     | 111-222-3333 |            | /root       | /bin/dash
+ bob       | xxx    |   1 |   1 | Bob       | 123-456-7890 |            | /home/bob   | /bin/zsh
+ alice     | xxx    |   2 |   1 | Alice     | 098-765-4321 |            | /home/alice | /bin/zsh
+(3 行记录)
+
+
+mydb=>  set role alice;
+SET
+mydb=> table passwd;
+错误:  对表 passwd 权限不够
+mydb=> select user_name,real_name,home_phone,extra_info,home_dir,shell from passwd;
+ user_name | real_name |  home_phone  | extra_info |  home_dir   |   shell
+-----------+-----------+--------------+------------+-------------+-----------
+ admin     | Admin     | 111-222-3333 |            | /root       | /bin/dash
+ bob       | Bob       | 123-456-7890 |            | /home/bob   | /bin/zsh
+ alice     | Alice     | 098-765-4321 |            | /home/alice | /bin/zsh
+(3 行记录)
+
+
+mydb=> update passwd set user_name = 'joe';
+错误:  对表 passwd 权限不够
+mydb=> update passwd set real_name = 'Alice Doe';
+UPDATE 1
+mydb=> update passwd set real_name = 'John Doe' where user_name = 'admin';
+UPDATE 0
+mydb=> update passwd set shell = '/bin/xx';
+错误:  新行违背了表"passwd"的行级安全策略
+mydb=> delete from passwd;
+错误:  对表 passwd 权限不够
+mydb=> insert into passwd (user_name) values ('xxx');
+错误:  对表 passwd 权限不够
+mydb=> update passwd set pwhash = 'abc';
+UPDATE 1
+```
 
 [返回目录](#目录)
 
