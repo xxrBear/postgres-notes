@@ -3710,7 +3710,7 @@ createdb -T template0 dbname
 > template1 和 template0 除了 template1 的名称是 CREATE DATABASE 的默认源数据库名称这一事实之外，没有任何特殊状态。例如，可以删除 template1 并从 template0 重新创建它，而不会产生任何不良影响。如果有人不小心在 template1 中添加了一堆垃圾，则此操作可能是明智的。（要删除 template1，它必须具有 pg_database.datistemplate = false。）
 > 当初始化数据库集群时，也会创建 postgres 数据库。此数据库旨在作为用户和应用程序连接的默认数据库。它只是 template1 的副本，如有必要，可以删除并重新创建
 
-[返回目录](#返回目录)
+[返回目录](#目录)
 
 ## 数据库维护
 
@@ -3782,4 +3782,4 @@ pg_ctl start | rotatelogs /var/log/pgsql_log 86400
 
 pgBadger 是一个外部项目，可以进行复杂的日志文件分析。check_postgres 在日志文件中出现重要消息时提供 Nagios 警报，以及检测许多其他异常情况。
 
-[返回目录](#返回目录)
+[返回目录](#目录)
