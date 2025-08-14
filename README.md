@@ -738,16 +738,16 @@ SELECT STRING_AGG(name, ', ') FROM users; -- 拼接字符串
 
 这些通常配合系统视图 `pg_stat_activity` 使用，函数直接获取有限信息：
 
-| 函数                                              | 说明                       | 示例                                                            |
-| ------------------------------------------------- | -------------------------- | --------------------------------------------------------------- |
-| `pg_stat_get_backend_pid(backend_id)`             | 获取后台进程 PID           | `SELECT pg_stat_get_backend_pid(1);`                            |
-| `pg_stat_get_backend_activity(backend_id)`        | 获取后台进程正在执行的 SQL | `SELECT pg_stat_get_backend_activity(pg_backend_pid());`        |
-| `pg_stat_get_backend_client_addr(backend_id)`     | 获取客户端 IP              | `SELECT pg_stat_get_backend_client_addr(pg_backend_pid());`     |
-| `pg_stat_get_backend_client_port(backend_id)`     | 获取客户端端口             | `SELECT pg_stat_get_backend_client_port(pg_backend_pid());`     |
-| `pg_stat_get_backend_start(backend_id)`           | 会话开始时间               | `SELECT pg_stat_get_backend_start(pg_backend_pid());`           |
-| `pg_stat_get_backend_xact_start(backend_id)`      | 事务开始时间               | `SELECT pg_stat_get_backend_xact_start(pg_backend_pid());`      |
-| `pg_stat_get_backend_wait_event(backend_id)`      | 当前等待的事件类型         | `SELECT pg_stat_get_backend_wait_event(pg_backend_pid());`      |
-| `pg_stat_get_backend_wait_event_type(backend_id)` | 等待事件大类               | `SELECT pg_stat_get_backend_wait_event_type(pg_backend_pid());` |
+| 函数                                            | 说明                       | 示例                                                          |
+| ----------------------------------------------- | -------------------------- | ------------------------------------------------------------- |
+| pg_stat_get_backend_pid(backend_id)             | 获取后台进程 PID           | SELECT pg_stat_get_backend_pid(1);                            |
+| pg_stat_get_backend_activity(backend_id)        | 获取后台进程正在执行的 SQL | SELECT pg_stat_get_backend_activity(pg_backend_pid());        |
+| pg_stat_get_backend_client_addr(backend_id)     | 获取客户端 IP              | SELECT pg_stat_get_backend_client_addr(pg_backend_pid());     |
+| pg_stat_get_backend_client_port(backend_id)     | 获取客户端端口             | SELECT pg_stat_get_backend_client_port(pg_backend_pid());     |
+| pg_stat_get_backend_start(backend_id)           | 会话开始时间               | SELECT pg_stat_get_backend_start(pg_backend_pid());           |
+| pg_stat_get_backend_xact_start(backend_id)      | 事务开始时间               | SELECT pg_stat_get_backend_xact_start(pg_backend_pid());      |
+| pg_stat_get_backend_wait_event(backend_id)      | 当前等待的事件类型         | SELECT pg_stat_get_backend_wait_event(pg_backend_pid());      |
+| pg_stat_get_backend_wait_event_type(backend_id) | 等待事件大类               | SELECT pg_stat_get_backend_wait_event_type(pg_backend_pid()); |
 
 > 这些 `pg_stat_get_backend_*` 函数大多是内部统计接口，实际用时更多人直接查
 
@@ -757,20 +757,20 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 
 ### 会话配置函数
 
-| 函数                                     | 说明                 | 示例                                                          |
-| ---------------------------------------- | -------------------- | ------------------------------------------------------------- |
-| `current_setting('param')`               | 获取当前会话参数值   | `SELECT current_setting('search_path');`                      |
-| `set_config('param', 'value', is_local)` | 设置当前会话参数值   | `SELECT set_config('search_path', 'myschema,public', false);` |
-| `pg_show_all_settings()` *(>=17)*        | 列出所有当前会话设置 | `SELECT * FROM pg_show_all_settings();`                       |
+| 函数                                   | 说明                 | 示例                                                        |
+| -------------------------------------- | -------------------- | ----------------------------------------------------------- |
+| current_setting('param')               | 获取当前会话参数值   | SELECT current_setting('search_path');                      |
+| set_config('param', 'value', is_local) | 设置当前会话参数值   | SELECT set_config('search_path', 'myschema,public', false); |
+| pg_show_all_settings() *(>=17)*        | 列出所有当前会话设置 | SELECT * FROM pg_show_all_settings();                       |
 
 ### 会话时间与生命周期
 
-| 函数                                | 说明                           | 示例                                 |
-| ----------------------------------- | ------------------------------ | ------------------------------------ |
-| `clock_timestamp()`                 | 当前实际时间（调用时立即取值） | `SELECT clock_timestamp();`          |
-| `statement_timestamp()`             | 当前 SQL 开始执行的时间        | `SELECT statement_timestamp();`      |
-| `transaction_timestamp()` / `now()` | 当前事务开始的时间             | `SELECT transaction_timestamp();`    |
-| `pg_postmaster_start_time()`        | 数据库服务启动时间             | `SELECT pg_postmaster_start_time();` |
+| 函数                            | 说明                           | 示例                               |
+| ------------------------------- | ------------------------------ | ---------------------------------- |
+| clock_timestamp()               | 当前实际时间（调用时立即取值） | SELECT clock_timestamp();          |
+| statement_timestamp()           | 当前 SQL 开始执行的时间        | SELECT statement_timestamp();      |
+| transaction_timestamp() / now() | 当前事务开始的时间             | SELECT transaction_timestamp();    |
+| pg_postmaster_start_time()      | 数据库服务启动时间             | SELECT pg_postmaster_start_time(); |
 
 ### 访问权限查询函数
 
@@ -778,10 +778,10 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 
 **数据库权限函数**
 
-| 函数                                              | 说明                           | 示例                                                                          |
-| ------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------- |
-| `has_database_privilege(dbname, privilege)`       | 判断当前用户是否拥有数据库权限 | `SELECT has_database_privilege(current_user, current_database(), 'CONNECT');` |
-| `has_database_privilege(user, dbname, privilege)` | 判断指定用户是否拥有数据库权限 | `SELECT has_database_privilege('alice', 'mydb', 'CREATE');`                   |
+| 函数                                            | 说明                           | 示例                                                                        |
+| ----------------------------------------------- | ------------------------------ | --------------------------------------------------------------------------- |
+| has_database_privilege(dbname, privilege)       | 判断当前用户是否拥有数据库权限 | SELECT has_database_privilege(current_user, current_database(), 'CONNECT'); |
+| has_database_privilege(user, dbname, privilege) | 判断指定用户是否拥有数据库权限 | SELECT has_database_privilege('alice', 'mydb', 'CREATE');                   |
 
 **可用的 privilege 类型**
 
@@ -792,10 +792,10 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 
 **模式权限函数**
 
-| 函数                                                | 说明                         | 示例                                                      |
-| --------------------------------------------------- | ---------------------------- | --------------------------------------------------------- |
-| `has_schema_privilege(schemaname, privilege)`       | 判断当前用户是否拥有模式权限 | `SELECT has_schema_privilege('public', 'USAGE');`         |
-| `has_schema_privilege(user, schemaname, privilege)` | 判断指定用户是否拥有模式权限 | `SELECT has_schema_privilege('bob', 'public', 'CREATE');` |
+| 函数                                              | 说明                         | 示例                                                    |
+| ------------------------------------------------- | ---------------------------- | ------------------------------------------------------- |
+| has_schema_privilege(schemaname, privilege)       | 判断当前用户是否拥有模式权限 | SELECT has_schema_privilege('public', 'USAGE');         |
+| has_schema_privilege(user, schemaname, privilege) | 判断指定用户是否拥有模式权限 | SELECT has_schema_privilege('bob', 'public', 'CREATE'); |
 
 **可用的 privilege 类型**
 
