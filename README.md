@@ -3777,3 +3777,123 @@ pg_ctl start | rotatelogs /var/log/pgsql_log 86400
 pgBadger 是一个外部项目，可以进行复杂的日志文件分析。check_postgres 在日志文件中出现重要消息时提供 Nagios 警报，以及检测许多其他异常情况。
 
 [返回目录](#目录)
+
+## 备份和恢复
+
+### 简介
+与所有包含有价值数据的事物一样，PostgreSQL 数据库应定期备份。虽然过程本质上很简单，但重要的是要清楚地理解底层技术
+
+备份 PostgreSQL 数据主要有三种不同的方法：
+
+- SQL转储
+- 文件系统级别的备份
+- 连续归档
+
+每种方法都有其自身的优点和缺点
+
+### SQL转储
+
+- 什么是SQL转储
+
+这种转储方法背后的思想是生成一个包含 SQL 命令的文件，当这些命令被反馈到服务器时，将以与转储时相同的状态重新创建数据库。PostgreSQL 提供了实用程序 pg_dump 来实现此目的。此命令的基本用法是
+
+```sql
+pg_dump dbname > dumpfile
+```
+
+像任何其他 PostgreSQL 客户端应用程序一样，pg_dump 默认情况下将使用与当前操作系统用户名相同的数据库用户名进行连接。要覆盖此设置，请指定 -U 选项或设置环境变量 PGUSER。请记住，pg_dump 连接受正常的客户端身份验证机制的约束
+
+由 pg_dump 创建的转储在内部是一致的，这意味着，转储表示 pg_dump 开始运行时数据库的快照。pg_dump 在工作时不会阻止数据库上的其他操作。（例外情况是那些需要使用独占锁进行操作的操作，例如大多数形式的 ALTER TABLE。）
+
+- 恢复转储
+```sql
+psql dbname < dumpfile
+```
+
+
+- 导出单个表
+
+```bash
+pg_dump -U postgres -t mytable mydb > mytable.sql
+```
+
+`-t` 指定表名，可多次指定多个表：
+
+```bash
+pg_dump -U postgres -t table1 -t table2 mydb > tables.sql
+```
+
+
+- 导出带数据和结构
+
+默认 `pg_dump` 会导出结构和数据，如果只想导出结构：
+
+```bash
+pg_dump -U postgres -s mydb > mydb_schema.sql
+```
+
+* `-s` 或 `--schema-only`：只导出表结构、视图、索引、约束等
+* `-a` 或 `--data-only`：只导出数据，不导出结构
+
+
+- 使用 `psql` 导入 SQL 转储
+
+```bash
+psql -U username -d dbname -f db_backup.sql
+```
+
+示例：
+
+```bash
+psql -U postgres -d mydb -f mydb.sql
+```
+
+注意：导入时，数据库 `mydb` 必须已经存在，如果不存在，需要先创建：
+
+```sql
+CREATE DATABASE mydb;
+```
+
+示例：自定义格式导出并恢复
+
+```bash
+pg_dump -U postgres -Fc mydb > mydb.dump
+pg_restore -U postgres -d mydb mydb.dump
+```
+
+`pg_dumpall` 是 PostgreSQL 提供的 **全实例导出工具**，与 `pg_dump` 不同的是：
+
+* `pg_dump` 只能导出单个数据库
+* `pg_dumpall` 可以导出 **整个 PostgreSQL 实例下的所有数据库**，以及全局对象（如角色、权限、表空间等）
+
+
+导出整个 PostgreSQL 实例到 SQL 文件
+
+```bash
+pg_dumpall -U postgres > full_backup.sql
+```
+
+* `-U postgres`：指定超级用户
+* `>`：重定向到文件
+* `full_backup.sql`：输出文件，里面包含所有数据库和全局对象的 SQL
+
+> 注意：生成的是文本 SQL 文件，导入时可以直接用 `psql` 恢复。
+
+
+仅导出角色和全局对象
+
+```bash
+pg_dumpall -g -U postgres > globals.sql
+```
+
+* `-g` 或 `--globals-only`：只导出角色、权限、表空间等全局对象，不导出数据库数据
+* 适合先备份用户权限，再单独用 `pg_dump` 备份每个数据库
+
+导入全量 SQL 文件
+
+```bash
+psql -U postgres -f full_backup.sql
+```
+
+* 会依次创建所有角色、数据库、表，并插入数据
+* 适合**整个 PostgreSQL 实例迁移或恢复**
