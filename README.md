@@ -3781,9 +3781,9 @@ pgBadger 是一个外部项目，可以进行复杂的日志文件分析。check
 ## 备份和恢复
 
 ### 简介
-与所有包含有价值数据的事物一样，PostgreSQL 数据库应定期备份。虽然过程本质上很简单，但重要的是要清楚地理解底层技术
+`postgres` 数据库应定期备份，以防止断电、网络d等故障下导致的数据库崩溃。
 
-备份 PostgreSQL 数据主要有三种不同的方法：
+备份`postgres`数据主要有三种不同的方法：
 
 - SQL转储
 - 文件系统级别的备份
@@ -3806,10 +3806,10 @@ pg_dump dbname > dumpfile
 由 pg_dump 创建的转储在内部是一致的，这意味着，转储表示 pg_dump 开始运行时数据库的快照。pg_dump 在工作时不会阻止数据库上的其他操作。（例外情况是那些需要使用独占锁进行操作的操作，例如大多数形式的 ALTER TABLE。）
 
 - 恢复转储
+
 ```sql
 psql dbname < dumpfile
 ```
-
 
 - 导出单个表
 
@@ -3817,12 +3817,11 @@ psql dbname < dumpfile
 pg_dump -U postgres -t mytable mydb > mytable.sql
 ```
 
-`-t` 指定表名，可多次指定多个表：
+- 指定表名，可多次指定多个表：
 
 ```bash
 pg_dump -U postgres -t table1 -t table2 mydb > tables.sql
 ```
-
 
 - 导出带数据和结构
 
@@ -3832,9 +3831,9 @@ pg_dump -U postgres -t table1 -t table2 mydb > tables.sql
 pg_dump -U postgres -s mydb > mydb_schema.sql
 ```
 
-* `-s` 或 `--schema-only`：只导出表结构、视图、索引、约束等
-* `-a` 或 `--data-only`：只导出数据，不导出结构
+`-s` 或 `--schema-only`：只导出表结构、视图、索引、约束等
 
+`-a` 或 `--data-only`：只导出数据，不导出结构
 
 - 使用 `psql` 导入 SQL 转储
 
@@ -3861,11 +3860,10 @@ pg_dump -U postgres -Fc mydb > mydb.dump
 pg_restore -U postgres -d mydb mydb.dump
 ```
 
-`pg_dumpall` 是 PostgreSQL 提供的 **全实例导出工具**，与 `pg_dump` 不同的是：
+`pg_dumpall` 是 PostgreSQL 提供的全实例导出工具，与 `pg_dump` 不同的是：
 
 * `pg_dump` 只能导出单个数据库
-* `pg_dumpall` 可以导出 **整个 PostgreSQL 实例下的所有数据库**，以及全局对象（如角色、权限、表空间等）
-
+* `pg_dumpall` 可以导出整个 PostgreSQL 实例下的所有数据库，以及全局对象（如角色、权限、表空间等）
 
 导出整个 PostgreSQL 实例到 SQL 文件
 
@@ -3878,7 +3876,6 @@ pg_dumpall -U postgres > full_backup.sql
 * `full_backup.sql`：输出文件，里面包含所有数据库和全局对象的 SQL
 
 > 注意：生成的是文本 SQL 文件，导入时可以直接用 `psql` 恢复。
-
 
 仅导出角色和全局对象
 
@@ -3896,4 +3893,91 @@ psql -U postgres -f full_backup.sql
 ```
 
 * 会依次创建所有角色、数据库、表，并插入数据
-* 适合**整个 PostgreSQL 实例迁移或恢复**
+* 适合整个`postgres`实例迁移或恢复
+
+### 连续归档和时间点恢复
+
+在任何时候，PostgreSQL 都会在群集数据目录的 pg_wal/ 子目录中维护一个预写式日志 (WAL)。该日志记录了对数据库数据文件所做的每一项更改。此日志主要用于崩溃安全目的：如果系统崩溃，则可以通过“重放”自上次检查点以来所做的日志条目，将数据库恢复到一致状态。但是，日志的存在使得可以使用第三种策略来备份数据库：我们可以将文件系统级别的备份与 WAL 文件的备份相结合。如果需要恢复，我们将恢复文件系统备份，然后从备份的 WAL 文件中重放，以使系统恢复到当前状态。这种方法比以前的任何一种方法都更复杂，但它有一些显著的好处。
+
+**目标**：
+不仅备份数据库某一刻的快照，还持续保存之后产生的 **WAL 文件**，这样可以恢复到任意时间点。
+
+**原理**：
+
+1. 数据库变更首先写入 **WAL**（`pg_wal` 目录）
+2. 开启归档模式后，PostgreSQL 会在 WAL 文件写满或切换时，将它复制到指定的归档目录
+3. 只要你有一次**全量备份** + 从备份时刻开始的所有 WAL 文件，就可以恢复到那个时间段内的任意状态
+
+**配置方法**（`postgresql.conf`）：
+
+```conf
+archive_mode = on
+archive_command = 'cp %p /path/to/archive/%f'
+wal_level = replica
+```
+
+* `%p`：WAL 文件的完整路径
+* `%f`：WAL 文件名
+
+归档目录要能长期保存，否则恢复时会缺文件。
+
+时间点恢复
+
+**目标**：
+在有了全量备份 + WAL 归档的前提下，把数据库恢复到某个精确时间点（比如出错前一秒）。
+
+**步骤**：
+
+1. **准备全量备份**
+
+   * 通常用 `pg_basebackup` 或文件级备份：
+
+   ```bash
+   pg_basebackup -U postgres -D /backup/base -Fp -Xs -P
+   ```
+
+2. **拷贝 WAL 归档**
+
+   * 确保备份开始到恢复时间点之间的所有 WAL 文件都在归档目录里
+
+3. **恢复时设置恢复目标**
+
+   * 在 `postgresql.conf` 或 `recovery.signal` 配置：
+
+   ```conf
+   restore_command = 'cp /path/to/archive/%f %p'
+   recovery_target_time = '2025-08-15 14:30:00'
+   ```
+
+   或恢复到特定事务：
+
+   ```conf
+   recovery_target_xid = '123456'
+   ```
+
+   或恢复到某个 LSN：
+
+   ```conf
+   recovery_target_lsn = '0/1607B48'
+   ```
+
+4. **启动恢复**
+
+   * 停库，把数据目录换成备份目录
+   * 创建 `recovery.signal` 文件
+   * 启动数据库，PostgreSQL 会按 WAL 回放到目标时间
+
+关系和区别
+
+| 功能     | 连续归档                          | 时间点恢复                  |
+| -------- | --------------------------------- | --------------------------- |
+| 目的     | 持续保存 WAL 以备后续恢复         | 根据 WAL 回放恢复到任意时间 |
+| 前提     | 需要开启 archive\_mode 并保存归档 | 需要连续归档和一次全量备份  |
+| 使用场景 | 灾备、长时间回溯                  | 误删、数据错误后回退        |
+
+核心理解
+
+* **连续归档** 是“记录一切变更”的过程
+* **时间点恢复** 是“用记录回到过去”的过程
+
+[返回目录](#目录)
