@@ -261,8 +261,6 @@ SHOW ALL LIKE '%log%';
 
 ## 自定义运行参数
 
-</br>
-
 postgres 安装后的默认配置通常并不适合生产环境的高性能需求，默认配置为了兼容低配置机器，如 512MB 内存老机器
 
 推荐使用：[PGTune](https://pgtune.leopard.in.ua/)
@@ -280,7 +278,6 @@ SHOW config_file;
 
 
 ## 常用数据类型
-</br>
 
  **数值类型**
 
