@@ -4216,3 +4216,197 @@ WAL文件存储在数据目录下的目录 pg_wal 中，作为一组段文件，
 在完成检查点并刷新 WAL 后，检查点的位置会保存在 pg_control 文件中。因此，在恢复开始时，服务器首先读取 pg_control 以及检查点记录；然后从检查点记录中指示的 WAL 位置向前扫描，执行 REDO 操作。因为在检查点之后的数据页面的整个内容保存在 WAL 中，它是对第一个页面修改之后的内容保存的（假设未禁用 full_page_writes），所以在检查点后发生更改的所有页面都将恢复为一致的状态。
 
 为了处理 pg_control 已损坏的情况，我们应该支持按相反的顺序（从最新到最旧）扫描现有 WAL 段的可能性，以便找到最新的检查点。该操作尚未实施。 pg_control 非常小（小于一页），以至于不会出现部分写入问题，并且在撰写本文时，还没有出现仅因无法读取 pg_control 本身而导致数据库故障的情况。所以，尽管从理论上这是一个弱点，但实际上 pg_control 似乎没有问题。
+
+## 复制
+
+PostgreSQL 的主从复制方法主要分为几大类，每种方法有不同的适用场景：
+
+### 物理复制
+
+基于 **WAL（Write-Ahead Log）日志**，将主库的 WAL 数据流式传输或归档到从库，保证二进制级别的数据一致性。
+
+* **流复制（Streaming Replication）**
+
+  * PostgreSQL 原生支持
+  * 从库直接通过 TCP 连接从主库拉取 WAL 日志
+  * 从库只读，不能写
+  * 可配合 **同步复制**（保证主从一致性，牺牲写延迟）或 **异步复制**（提高性能，但可能丢失数据）
+  * 常与 **热备份（Hot Standby）** 一起用，从库可提供读服务
+
+* **日志归档复制（Log Shipping）**
+
+  * 将主库的 WAL 段文件定期归档到从库（例如通过 `archive_command`）
+  * 从库持续应用 WAL 文件恢复数据
+  * 延迟较大，实时性差
+  * 通常用于 **灾备（DR）** 场景
+
+* **级联复制（Cascading Replication）**
+
+  * 从库再作为上级，从它继续复制给下级
+  * 适合大规模分发（减少主库压力）
+
+
+### 逻辑复制
+
+基于 SQL 层的变更流，而不是 WAL 二进制日志。
+
+* **发布/订阅（Publication/Subscription，自 PostgreSQL 10 引入）**
+
+  * 可以复制指定的 **表**（而不是整个数据库）
+  * 允许从库独立写入（不会像物理复制那样锁死）
+  * 支持跨版本、跨平台复制
+  * 适合做 **多源复制、数据分发、在线迁移**
+
+* **基于触发器的逻辑复制**（如 `pglogical`, `Bucardo`）
+
+  * 第三方工具实现
+  * 通过触发器捕获变化并同步
+  * 功能强大，但性能略低
+
+
+### 第三方工具复制
+
+* **Slony-I**：老牌逻辑复制，支持主从切换，但配置复杂
+* **Bucardo**：支持多主复制（multi-master），基于触发器
+* **pglogical**：Postgres 官方支持的扩展，逻辑复制增强版
+* **Citus**：将 PostgreSQL 变成分布式数据库，水平分片 + 复制
+
+### 一主多从复制
+
+在 **PostgreSQL 一主多从 (One Master, Multiple Slaves)** 的架构中，本质上还是基于主从复制（Streaming Replication 或其他方式），只不过主库会把 **WAL 日志** 同时推送给多个从库。这样，主库负责写操作，从库负责读操作，实现 **读写分离、读扩展**。
+
+
+**基于 Streaming Replication 的一主多从**
+
+这是最常用的方式，依赖于 **WAL 日志流复制**。
+
+### 主库配置
+
+`postgresql.conf`：
+
+```conf
+wal_level = replica
+max_wal_senders = 10       # 支持同时发送给多个从库
+wal_keep_size = 256        # 保留 WAL 大小，避免从库追不上
+archive_mode = on
+archive_command = 'cp %p /var/lib/pgsql/archive/%f'
+```
+
+`pg_hba.conf`：
+
+```conf
+host replication replicator 192.168.1.0/24 md5
+```
+
+主库创建复制用户：
+
+```sql
+CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'secret';
+```
+
+### 从库配置
+
+假设有两个从库 `slave1` 和 `slave2`。
+首先，做数据目录的基线拷贝：
+
+```bash
+pg_basebackup -h master_ip -D /var/lib/pgsql/data -U replicator -P -R
+```
+
+然后分别启动，从库会自动去主库拉取 WAL 流。
+这样就完成了一主两从的流复制。
+
+
+**基于逻辑复制的一主多从**
+
+逻辑复制适合只复制 **部分表/库**，并支持跨版本。
+
+### 主库配置
+
+`postgresql.conf`：
+
+```conf
+wal_level = logical
+max_replication_slots = 10
+max_wal_senders = 10
+```
+
+创建发布端：
+
+```sql
+CREATE PUBLICATION pub_all FOR ALL TABLES;
+```
+
+### 从库配置
+
+从库1：
+
+```sql
+CREATE SUBSCRIPTION sub_slave1 
+CONNECTION 'host=master_ip dbname=mydb user=replicator password=secret'
+PUBLICATION pub_all;
+```
+
+从库2：
+
+```sql
+CREATE SUBSCRIPTION sub_slave2 
+CONNECTION 'host=master_ip dbname=mydb user=replicator password=secret'
+PUBLICATION pub_all;
+```
+
+这样主库的表会同步到两个从库。
+
+
+**基于触发器/工具 (Londiste, Slony-I, Bucardo) 的一主多从**
+
+适合对旧版本 PostgreSQL 或者需要复杂拓扑（多主、多从）。
+例如使用 **Bucardo**：
+
+### 主库配置
+
+```bash
+bucardo add db masterdb dbname=mydb host=master_ip user=replicator pass=secret
+```
+
+### 从库配置
+
+```bash
+bucardo add db slave1 dbname=mydb host=slave1_ip user=replicator pass=secret
+bucardo add db slave2 dbname=mydb host=slave2_ip user=replicator pass=secret
+```
+
+创建复制关系：
+
+```bash
+bucardo add sync my_sync relgroup=mygroup dbs=masterdb:source,slave1:target,slave2:target
+bucardo start
+```
+
+**级联复制 (Cascading Replication)**
+
+如果主库压力过大，可以让一个从库再去给其他从库提供复制流。
+
+比如：
+
+```
+Master → Slave1 → Slave2
+```
+
+### 配置 Slave1 为中继
+
+在 `postgresql.conf` 中：
+
+```conf
+hot_standby = on
+max_wal_senders = 5
+```
+
+Slave2 连接 Slave1，而不是 Master：
+
+```bash
+pg_basebackup -h slave1_ip -D /var/lib/pgsql/data -U replicator -P -R
+```
+
+这样 Master 只需要推送一次 WAL，Slave1 分发给其他从库，减轻了 Master 负担。
+
