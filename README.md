@@ -14,7 +14,7 @@
 |                           | [系统信息函数](#系统信息函数) | [表分区](#表分区)         | [备份与恢复](#备份与恢复)       |
 |                           | [常用表达式](#常用表达式)     | [角色管理](#角色管理)     | [预写式日志](#预写式日志)       |
 |                           | [窗口函数](#窗口函数)         | [行安全策略](#行安全策略) | [复制](#复制)                   |
-|                           | [视图](#视图)                 | [客户端认证](#客户端认证) |                                 |
+|                           | [视图](#视图)                 | [客户端认证](#客户端认证) | [逻辑复制](#逻辑复制)           |
 |                           | [连接语句](#连接语句)         | [索引](#索引)             |                                 |
 |                           | [权限管理](#权限管理)         | [性能提示](#性能提示)     |                                 |
 |                           |                               | [功能扩展](#功能扩展)     |                                 |
@@ -4248,7 +4248,7 @@ PostgreSQL 的主从复制方法主要分为几大类，每种方法有不同的
   * 适合大规模分发（减少主库压力）
 
 
-### 逻辑复制
+- 逻辑复制
 
 基于 SQL 层的变更流，而不是 WAL 二进制日志。
 
@@ -4275,12 +4275,12 @@ PostgreSQL 的主从复制方法主要分为几大类，每种方法有不同的
 
 ### 一主多从复制
 
-在 **PostgreSQL 一主多从 (One Master, Multiple Slaves)** 的架构中，本质上还是基于主从复制（Streaming Replication 或其他方式），只不过主库会把 **WAL 日志** 同时推送给多个从库。这样，主库负责写操作，从库负责读操作，实现 **读写分离、读扩展**。
+在 PostgreSQL 一主多从的架构中，本质上还是基于主从复制或其他方式，只不过主库会把 WAL 日志同时推送给多个从库。这样，主库负责写操作，从库负责读操作，实现读写分离、读扩展
 
 
 **基于 Streaming Replication 的一主多从**
 
-这是最常用的方式，依赖于 **WAL 日志流复制**。
+这是最常用的方式，依赖于 WAL 日志流复制
 
 ### 主库配置
 
@@ -4315,13 +4315,13 @@ CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'secret';
 pg_basebackup -h master_ip -D /var/lib/pgsql/data -U replicator -P -R
 ```
 
-然后分别启动，从库会自动去主库拉取 WAL 流。
-这样就完成了一主两从的流复制。
+然后分别启动，从库会自动去主库拉取 WAL 流
+这样就完成了一主两从的流复制
 
 
 **基于逻辑复制的一主多从**
 
-逻辑复制适合只复制 **部分表/库**，并支持跨版本。
+逻辑复制适合只复制部分表或者库，并支持跨版本
 
 ### 主库配置
 
@@ -4357,12 +4357,12 @@ CONNECTION 'host=master_ip dbname=mydb user=replicator password=secret'
 PUBLICATION pub_all;
 ```
 
-这样主库的表会同步到两个从库。
+这样主库的表会同步到两个从库
 
 
 **基于触发器/工具 (Londiste, Slony-I, Bucardo) 的一主多从**
 
-适合对旧版本 PostgreSQL 或者需要复杂拓扑（多主、多从）。
+适合对旧版本 PostgreSQL 或者需要复杂拓扑（多主、多从）
 例如使用 **Bucardo**：
 
 ### 主库配置
@@ -4411,5 +4411,135 @@ pg_basebackup -h slave1_ip -D /var/lib/pgsql/data -U replicator -P -R
 ```
 
 这样 Master 只需要推送一次 WAL，Slave1 分发给其他从库，减轻了 Master 负担。
+
+[返回目录](#目录)
+
+## 逻辑复制
+
+### 什么是逻辑复制
+
+逻辑复制是一种基于**SQL 语义级别**的复制方式，它不同于物理复制, 基于 WAL 日志字节流的复制）：
+
+* **物理复制**：整个数据库集群按字节流复制，要求主从版本一致、架构一致，通常是「一主多从」做读写分离或高可用。
+* **逻辑复制**：基于 **表级别的数据变更（INSERT、UPDATE、DELETE）** 进行复制，可以选择只复制某些表的数据，甚至支持跨版本、跨平台复制。
+
+逻辑复制使用的是发布和订阅模型
+
+
+### 逻辑复制的核心概念
+
+* **Publication（发布端）**：
+  在主库定义一个发布规则，声明哪些表的数据变化会被发布。
+
+  ```sql
+  CREATE PUBLICATION mypub FOR TABLE users, orders;
+  ```
+
+* **Subscription（订阅端）**：
+  在从库上定义一个订阅，指定订阅哪个发布，以及如何连接主库。
+
+  ```sql
+  CREATE SUBSCRIPTION mysub
+  CONNECTION 'host=192.168.1.10 dbname=mydb user=repuser password=secret port=5432'
+  PUBLICATION mypub;
+  ```
+
+* **逻辑解码（Logical Decoding）**：
+  PostgreSQL 将 WAL 日志里的变更解码成 SQL 层面的变化（INSERT/UPDATE/DELETE），再传递给订阅端。
+
+### 使用场景
+
+* **跨版本升级**：比如从 PostgreSQL 12 升级到 16，可以用逻辑复制逐步迁移数据。
+* **部分表复制**：只复制某些业务相关表，不需要整个库。
+* **跨平台/跨架构**：主库和从库可以运行在不同操作系统、甚至不同 PostgreSQL 版本。
+* **数据同步到分析库**：业务库负责写，订阅库用来跑报表或 BI。
+
+### 配置步骤
+
+假设：
+
+* 主库：`192.168.1.10`
+* 从库：`192.168.1.20`
+* 数据库：`mydb`
+
+(1) 主库配置
+
+`postgresql.conf` 修改：
+
+```conf
+wal_level = logical
+max_replication_slots = 10
+max_wal_senders = 10
+```
+
+`pg_hba.conf` 添加允许复制用户访问：
+
+```conf
+host replication repuser 192.168.1.20/32 md5
+host mydb      repuser 192.168.1.20/32 md5
+```
+
+重启 PostgreSQL。
+
+创建用户：
+
+```sql
+CREATE ROLE repuser WITH LOGIN REPLICATION PASSWORD 'secret';
+```
+
+创建发布：
+
+```sql
+CREATE PUBLICATION mypub FOR TABLE users, orders;
+```
+
+
+(2) 从库配置
+
+在订阅端执行：
+
+```sql
+CREATE SUBSCRIPTION mysub
+CONNECTION 'host=192.168.1.10 port=5432 dbname=mydb user=repuser password=secret'
+PUBLICATION mypub;
+```
+
+Postgres 会自动复制 **已有数据**（除非指定 `WITH (copy_data = false)`），之后保持增量同步。
+
+### 常用操作
+
+* **添加新表到发布**
+
+  ```sql
+  ALTER PUBLICATION mypub ADD TABLE products;
+  ```
+* **删除表**
+
+  ```sql
+  ALTER PUBLICATION mypub DROP TABLE orders;
+  ```
+* **删除订阅**
+
+  ```sql
+  DROP SUBSCRIPTION mysub;
+  ```
+* **查看复制状态**
+
+  ```sql
+  \dRp+   -- 查看 publication
+  \dRs+   -- 查看 subscription
+  ```
+
+
+### 注意事项
+
+* 主从必须使用 **相同的数据库编码 (UTF8/GBK 等)**，否则可能出问题。
+* 表必须有 **主键** 或唯一约束，否则 UPDATE/DELETE 无法确定行。
+* 逻辑复制只支持 **DML (数据变更)**，不支持 DDL（比如 ALTER TABLE 不会同步）。
+* 如果订阅端的表已有数据，要小心冲突。
+* 一般用于 **数据迁移、分库分表、异地容灾、读写分离**。
+
+
+
 
 [返回目录](#目录)
