@@ -528,7 +528,7 @@ CREATE TABLE orders (
 
 ## 常用数据函数
 
-**字符串函数**
+### 字符串函数
 
 - 长度、截取、拼接
 ```sql
@@ -570,7 +570,7 @@ SELECT REPLACE('hello world', 'world', 'postgres'); -- 'hello postgres' 替换
 SELECT SUBSTRING('postgres' FROM 5 FOR 3); -- 'gre'  截取子字符串
 ```
 
-**日期和时间**
+### 日期和时间
 ```sql
 SELECT NOW();          -- 获取当前时间戳
 
@@ -595,7 +595,7 @@ SELECT NOW() - INTERVAL '1 hour'; -- 计算 1 小时前的时间
 SELECT TO_CHAR(NOW(), 'YYYY-MM-DD HH24:MI:SS'); -- 格式化日期
 ```
 
-**数学**
+### 数学逻辑
 ```sql
 SELECT ABS(-10);       -- 10  绝对值
 
@@ -618,7 +618,7 @@ SELECT EXP(1);         -- 2.718281828459045  e 的指数
 SELECT LOG(10);        -- 2.302585092994046  以 e 为底的对数
 ```
 
-**条件判断**
+### 条件判断
 ```sql
 SELECT COALESCE(NULL, 'default'); -- 'default'  返回第一个非 NULL 值
 
@@ -631,7 +631,7 @@ SELECT CASE
 END AS age_group FROM people;
 ```
 
-**数组**
+### 数组
 ```sql
 SELECT ARRAY[1, 2, 3] || ARRAY[4, 5]; -- {1,2,3,4,5}  数组合并
 
@@ -642,7 +642,7 @@ SELECT ARRAY_REMOVE(ARRAY[1, 2, 3], 2); -- {1,3}  移除元素
 SELECT UNNEST(ARRAY[1,2,3]); -- 拆分数组
 ```
 
-**Json**
+### JSON
 ```sql
 SELECT '{"name": "Alice", "age": 25}'::json->>'name'; -- 'Alice'
 
@@ -653,7 +653,7 @@ SELECT jsonb_build_object('name', 'Bob', 'age', 30); -- 生成Json数据
 SELECT jsonb_array_elements('[1,2,3]'::jsonb); -- 拆解 JSON 数组
 ```
 
-**序列和 ID 处理**
+### 序列和 ID 处理
 ```sql
 -- 创建序列
 CREATE SEQUENCE my_sequence
@@ -672,7 +672,7 @@ SELECT setval('my_sequence', 100); -- 设置序列当前值
 DROP SEQUENCE my_sequence; -- 删除
 ```
 
-**实用函数**
+### 实用函数
 ```sql
 SELECT MD5('password'); -- 计算 MD5 哈希值
 
@@ -683,7 +683,7 @@ SELECT VERSION(); -- 获取 postgres 版本
 SELECT PG_SIZE_PRETTY(PG_DATABASE_SIZE('mydb')); -- 获取数据库大小
 ```
 
-**聚合函数**
+### 聚合函数
 
 ```sql
 SELECT COUNT(*) FROM users; -- 统计行数
@@ -977,17 +977,14 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 
 ### 角色与权限管理
 
-| 函数                                             | 说明                             | 示例                                                                       |
-| ------------------------------------------------ | -------------------------------- | -------------------------------------------------------------------------- |
-| `pg_has_role(role, privilege)`                   | 检查当前用户是否具有指定角色权限 | `SELECT pg_has_role('myrole', 'USAGE');`                                   |
-| `pg_has_any_role(role)`                          | 检查当前用户是否属于某个角色     | `SELECT pg_has_any_role('myrole');`                                        |
-| `pg_has_table_privilege(user, table, privilege)` | 检查表权限                       | `SELECT pg_has_table_privilege('user1', 'mytable', 'SELECT');`             |
-| `pg_has_sequence_privilege(...)`                 | 检查序列权限                     | `SELECT pg_has_sequence_privilege('user1', 'mysequence', 'USAGE');`        |
-| `pg_has_function_privilege(...)`                 | 检查函数权限                     | `SELECT pg_has_function_privilege('user1', 'myfunc(integer)', 'EXECUTE');` |
-| `pg_has_column_privilege(...)`                   |                                  |                                                                            |
-
-
-\| 检查列权限                      | `SELECT pg_has_column_privilege('user1', 'mytable', 'mycolumn', 'SELECT');` |
+| 函数                                             | 说明                             | 示例                                                                        |
+| ------------------------------------------------ | -------------------------------- | --------------------------------------------------------------------------- |
+| `pg_has_role(role, privilege)`                   | 检查当前用户是否具有指定角色权限 | `SELECT pg_has_role('myrole', 'USAGE');`                                    |
+| `pg_has_any_role(role)`                          | 检查当前用户是否属于某个角色     | `SELECT pg_has_any_role('myrole');`                                         |
+| `pg_has_table_privilege(user, table, privilege)` | 检查表权限                       | `SELECT pg_has_table_privilege('user1', 'mytable', 'SELECT');`              |
+| `pg_has_sequence_privilege(...)`                 | 检查序列权限                     | `SELECT pg_has_sequence_privilege('user1', 'mysequence', 'USAGE');`         |
+| `pg_has_function_privilege(...)`                 | 检查函数权限                     | `SELECT pg_has_function_privilege('user1', 'myfunc(integer)', 'EXECUTE');`  |
+| `pg_has_column_privilege(...)`                   | 检查列权限                       | `SELECT pg_has_column_privilege('user1', 'mytable', 'mycolumn', 'SELECT');` |
 
 ### 其他管理类函数
 
@@ -1005,7 +1002,7 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 
 ## 常用表达式
 
-**条件表达式**
+### 条件表达式
 
 常用条件表达式一览
 
@@ -1065,7 +1062,7 @@ SELECT GREATEST(price_1, price_2, price_3) AS max_price FROM products;
 SELECT LEAST(price_1, price_2, price_3) AS min_price FROM products;
 ```
 
-**子查询表达式**
+### 子查询表达式
 
 `WHERE` 子句中的子查询
 
@@ -1270,7 +1267,7 @@ FROM sales;
 
 ## 视图
 
-**什么是视图**
+### 什么是视图
 
 视图是一个虚拟表，其内容由一个 SELECT 查询定义，并在每次访问视图时执行查询
 
@@ -1288,7 +1285,7 @@ WHERE condition;
 * 在使用视图时，postgres 会将视图替换成对应的 SELECT 语句
 
 
-**视图的分类**
+### 视图的分类
 
 | 类型       | 描述                                            | 是否持久化数据     |
 | ---------- | ----------------------------------------------- | ------------------ |
@@ -1297,9 +1294,9 @@ WHERE condition;
 | 物化视图   | 将查询结果缓存                                  | 持久化，可定期刷新 |
 | 递归视图   | 使用 WITH RECURSIVE 创建递归层次结构            |                    |
 
-**创建视图**
+### 创建视图
 
-基本语法
+- 基本语法
 
 ```sql
 CREATE VIEW employee_view AS
@@ -1307,21 +1304,21 @@ SELECT id, name, salary FROM employees
 WHERE department = 'Sales';
 ```
 
-带列名别名
+- 带列名别名
 
 ```sql
 CREATE VIEW employee_summary (emp_id, emp_name) AS
 SELECT id, name FROM employees;
 ```
 
-替代 OR REPLACE
+- 替代 OR REPLACE
 
 ```sql
 CREATE OR REPLACE VIEW employee_view AS
 SELECT id, name FROM employees WHERE active = true;
 ```
 
-递归视图
+- 递归视图
 
 ```sql
 WITH RECURSIVE subordinates AS (
@@ -1335,7 +1332,7 @@ SELECT * FROM subordinates;
 ```
 
 
-**物化视图**
+### 物化视图
 
 定义
 
@@ -1362,7 +1359,7 @@ REFRESH MATERIALIZED VIEW mv_sales_summary;
 * 物化视图可以建立索引，提升性能
 
 
-**更新视图**
+### 更新视图
 
 默认规则
 
@@ -1390,7 +1387,7 @@ FOR EACH ROW EXECUTE FUNCTION insert_into_view();
 ```
 
 
-**查询视图**
+### 查询视图
 
 ```sql
 SELECT * FROM employee_view;
@@ -1399,7 +1396,7 @@ SELECT * FROM employee_view;
 你可以对视图使用 `WHERE`、`JOIN`、`ORDER BY` 等操作，就像普通表一样
 
 
-**删除视图**
+### 删除视图
 
 ```sql
 DROP VIEW employee_view;
@@ -1412,7 +1409,7 @@ DROP MATERIALIZED VIEW mv_sales_summary;
 DROP VIEW IF EXISTS employee_view;
 ```
 
-**查看视图定义**
+### 查看视图定义
 
 查看视图 SQL
 
@@ -1426,7 +1423,7 @@ SELECT definition FROM pg_views WHERE viewname = 'employee_view';
 \d+ employee_view
 ```
 
-**视图的高级用法**
+### 视图的高级用法
 
 嵌套视图（视图中调用视图）
 
@@ -1472,7 +1469,7 @@ GRANT SELECT ON public_employee_view TO readonly_user;
 
 ## 连接语句 
 
-**内连接**
+### 内连接
 
 在 postgres 中，INNER JOIN 的行为如下：
 
@@ -1530,7 +1527,7 @@ ON e.dept_id = d.id;
 | Alice          | IT               |
 | Bob            | HR               |
 
-**外连接**
+### 外连接
 
 postgres 中有多种不同的外连接语句，左连接、右连接、全外连接、交叉连接
 
@@ -1746,7 +1743,7 @@ REVOKE ALL ON accounts FROM PUBLIC;
 
 `postgres`事务处理是指在数据库中执行一系列 SQL 语句，使其成为一个不可分割的操作单元，即 要么全部执行成功，要么全部回滚，以确保数据的一致性和完整性
 
-**准备工作**
+### 准备工作
 
 + 创建演示表
 
@@ -1760,7 +1757,7 @@ CREATE TABLE "public"."users" (
 );
 ```
 
-**基本操作**
+### 基本操作
 
 + 提交事务
 
@@ -1802,7 +1799,7 @@ ROLLBACK TO sp2;
 COMMIT; -- 提交事务
 ```
 
-**事务隔离级别**
+### 事务隔离级别
 
 在数据库中，事务隔离级别用于控制多个事务并发执行时的可见性，避免数据不一致的问题。postgres 遵循 ACID（原子性、一致性、隔离性、持久性） 原则，并提供四种事务隔离级别
 
@@ -1957,7 +1954,7 @@ postgres 发现两个事务虽然在一开始都看到工资小于 10000，但�
 - 不要滥用 `SERIALIZABLE`，性能开销大，优先考虑 `REPEATABLE READ` 
 
 
-**设置事务隔离级别**
+### 设置事务隔离级别
 
 在事务中设置
 
@@ -1984,7 +1981,7 @@ default_transaction_isolation = 'read committed'
 
 + 影响所有数据库的默认隔离级别
 
-**自动提交**
+### 自动提交
 
 postgres 默认开启自动提交模式，即每条 SQL 语句都会被自动提交。如果要手动管理事务，需要显式使用 `BEGIN`
 
@@ -1998,14 +1995,14 @@ SET AUTOCOMMIT TO OFF;
 
 `postgres`的触发器`Trigger`是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数（触发器函数）。它常用于 数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景
 
-**触发器的构成**
+### 触发器的构成
 
 一个完整的触发器由两个部分组成：
 
 - 触发器函数：触发器执行的具体逻辑，必须返回 `TRIGGER` 类型
 - 触发器：绑定到表的某个事件上，调用触发器函数
 
-**触发器的类型**
+### 触发器的类型
 
 按照触发时间分类
 
@@ -2025,7 +2022,7 @@ SET AUTOCOMMIT TO OFF;
 + 行级触发器：对受影响的每一行数据触发一次
 + 语句级触发器：对整个 SQL 语句仅触发一次
 
-**创建触发器**
+### 创建触发器
 
 postgres 触发器的创建需要两步：
 
@@ -2121,7 +2118,7 @@ FOR EACH ROW
 EXECUTE FUNCTION prevent_delete();
 ```
 
-**触发器的管理**
+### 触发器的管理
 
 查看已有触发器
 ```sql
@@ -2149,7 +2146,7 @@ DROP FUNCTION IF EXISTS log_user_insert();
 
 postgres 中的存储过程，是一种在数据库中定义的可重复使用的程序单元，用于封装复杂的业务逻辑和数据处理操作，类似编程语言的函数
 
-**示例**
+### 示例
 
 + 创建存储过程
 
@@ -2168,7 +2165,7 @@ END $$;
 CALL insert_users(value1, value2);
 ```
 
-**事务控制**
+### 事务控制
 
 ```sql
 CREATE PROCEDURE update_salary(emp_id INT, new_salary NUMERIC)
@@ -2187,7 +2184,7 @@ END;
 $$;
 ```
 
-**循环**
+### 循环
 
 ```sql
 CREATE PROCEDURE insert_multiple_employees()
@@ -2204,7 +2201,7 @@ END;
 $$;
 ```
 
-**带输入和输出参数**
+### 带输入和输出参数
 
 ```sql
 CREATE PROCEDURE get_employee_salary(IN emp_id INT, OUT emp_salary NUMERIC)
@@ -2216,14 +2213,13 @@ END;
 $$;
 ```
 
-**删除存储过程**
+### 删除存储过程
 
 ```sql
 DROP PROCEDURE xxxxx(TEXT, NUMERIC);
 ```
 
 [返回目录](#目录)
-
 
 ## 模式管理
 
@@ -2858,7 +2854,7 @@ postgres 会从上到下逐行匹配，匹配到第一个满足条件的规则�
 
 ## 索引
 
-**简介**
+### 简介
 
 如果你要执行以下的SQL
 ```sql
@@ -2871,7 +2867,7 @@ SELECT content FROM test1 WHERE id = constant;
 
 要合理的设计和使用索引，不能盲目的使用，索引并非没有缺点。例如，在大表上创建索引可能需要很长时间。默认情况下，postgres 允许在创建索引的同时对表进行读取（SELECT 语句），但写入（INSERT，UPDATE，DELETE）将被阻塞，直到索引构建完成。在生产环境中，这通常是不可接受的。
 
-**索引类型**
+### 索引类型
 
 | 索引类型    | 适用场景/优点                                                                    | 常用操作符                                          | 是否支持排序 | 是否支持唯一约束 |
 | ----------- | -------------------------------------------------------------------------------- | --------------------------------------------------- | ------------ | ---------------- |
@@ -2882,7 +2878,7 @@ SELECT content FROM test1 WHERE id = constant;
 | **SP-GiST** | 稀疏数据、高维数据、分布不均的字段（如IP地址、文本前缀树）                       | 特定操作符                                          | 不支持       | 不支持           |
 | **BRIN**    | 特别适合大表的顺序插入列（如时间戳），体积小，查询范围效率高                     | 依赖顺序扫描                                        | 不支持       | 不支持           |
 
-**表达式索引**
+### 表达式索引
 
 在 postgres 中，表达式索引是一种特殊形式的索引，它不是直接建立在某个列上，而是建立在**列的计算结果（表达式）** 上
 ```sql
@@ -2890,7 +2886,7 @@ CREATE INDEX idx_lower_name ON users (lower(name));
 ```
 这个索引会存储 lower(name) 的结果，适用于你经常在查询中写 WHERE lower(name) = 'xxx' 的情况
 
-**部分索引**
+### 部分索引
 
 在 postgres 中，部分索引是一种只对表中部分行建立的索引
 
@@ -2918,7 +2914,7 @@ CREATE INDEX idx_active_users_email ON users(email) WHERE active = true;
 * 查询 `WHERE active = true AND email = 'xxx'` 时，能直接走这部分索引
 * 对剩下的 95 万不活跃用户完全不走索引，省资源
 
-**仅索引扫描和覆盖索引**
+### 仅索引扫描和覆盖索引
 
 仅索引扫描的和覆盖索引是重要的知识，熟悉它们是写出高效SQL查询语句的关键。但是在聊他两之前，我们还需要一些前置知识。
 
