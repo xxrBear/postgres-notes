@@ -114,11 +114,11 @@ WHERE o.status = 'completed';
 
 ## 命令行工具
 
-**简介**
+### 简介
 
 postgres 的命令行工具是指一组用于管理 PG 数据库的命令行程序。它们功能强大、灵活、适用于日常数据库操作、维护、备份、恢复、性能调优等
 
-**常用的命令行工具**
+### 常用的命令行工具
 
 | 工具名称        | 作用简介                                          | 常用场景                           |
 | --------------- | ------------------------------------------------- | ---------------------------------- |
@@ -135,19 +135,18 @@ postgres 的命令行工具是指一组用于管理 PG 数据库的命令行程�
 | `psql`          | 交互式查询工具                                    | 数据查询、管理数据库               |
 | `pg_isready`    | 检查数据库服务是否运行                            | 监控脚本中检测数据库状态           |
 
-**psql 示例**
+### psql 
 
-`psql`的含义是 
+`psql`是一个 PostgreSQL 的基于终端的前端。它让你能交互式地键入查询，把它们发送给PostgreSQL，并且查看查询结果。或者，输入可以来自于一个文件或者命令行参数。此外，psql还提供一些元命令和多种类似 shell 的特性来为编写脚本和自动化多种任务提供便利。
 
-它是 `postgres` 自带的交互式命令行客户端工具，主要用于连接和操作 PG 数据库
+- 连接数据库
 
-连接数据库
+如果你是使用二进制文件安装的`postgres`数据库，你可以在终端中输入下面的命令:
 
-如果你和我一样使用二进制文件安装`postgres`数据库，你可以在终端中输入下面的命令
 ```shell
-psql -U postgres -d your_db
+psql -U postgres -d mydb
 ```
-然后输入你的数据库密码，如果一切都没有问题，你会看到类似以下的输出
+然后输入你的数据库密码，如果一切正常，你会看到类似以下的输出
 
 ```
 用户 postgres 的口令：
@@ -156,6 +155,22 @@ psql (16.9)
 输入 "help" 来获取帮助信息.
 
 mydb=#
+
+mydb=# \d -- 显示 mydb 所有表
+                        关联列表
+ 架构模式 |          名称           |  类型  |  拥有者
+----------+-------------------------+--------+----------
+ public   | alembic_version         | 数据表 | postgres
+ public   | app_user                | 数据表 | postgres
+ public   | app_user2               | 数据表 | postgres
+ public   | passwd                  | 数据表 | postgres
+ public   | pg_stat_statements      | 视图   | postgres
+ public   | pg_stat_statements_info | 视图   | postgres
+ public   | products                | 数据表 | postgres
+ public   | test_lock               | 数据表 | postgres
+ public   | test_lock_id_seq        | 序列数 | postgres
+ public   | users                   | 数据表 | postgres
+(10 行记录)
 ```
 这表明你已经成功的连接上了你本地的 PG 数据库
 
@@ -3294,7 +3309,7 @@ SELECT pg_advisory_unlock(100);    -- 释放锁
 ## 性能提示
 
 
-**查询计划**
+### 查询计划
 
 在 postgres 中，EXPLAIN 是一个查询分析工具，用于查看一条 SQL 语句的执行计划，帮助你了解查询是如何被数据库理解和执行的，从而进行性能优化。
 
@@ -3308,7 +3323,7 @@ EXPLAIN ANALYZE SELECT * FROM users WHERE age > 30;
 ```
 > 这个会真正执行 SQL 并返回真实的执行时间和耗费资源，更有用
 
-**规划器使用的统计信息**
+### 规划器使用的统计信息
 
 在 postgres 中，查询规划器会根据统计信息来生成执行计划（比如是否走索引、使用嵌套循环还是哈希连接等）。这些统计信息由 postgres 自动收集，主要反映表的分布、基数、频率等特征。
 
@@ -3414,7 +3429,7 @@ ANALYZE your_table;
 | 走 Seq Scan 而非 Index Scan | `correlation` 为负，表无序 | 尝试强制索引或增加 `random_page_cost`                    |
 | JOIN 策略不合理             | 表基数估计偏差大           | 考虑提高统计目标，使用 `pg_stat_statements` 找出问题 SQL |
 
-**填充数据库**
+### 填充数据库
 
 在首次填充数据库时，可能需要插入大量数据。本节包含一些关于如何使此过程尽可能高效的建议。
 
@@ -3482,7 +3497,7 @@ pg_dump 生成的转储脚本会自动应用以上几个但不是全部的指导
 
 仅数据转储仍将使用 COPY，但它不会删除或重新创建索引，并且通常不会触及外键。因此，在加载仅数据转储时，如果要使用这些技术，则由您来删除和重新创建索引和外键。 在加载数据时增加 max_wal_size 仍然有用，但不要费心增加 maintenance_work_mem；相反，您将在之后手动重新创建索引和外键时执行此操作。并且不要忘记在完成后运行 ANALYZE
 
-**非持久化设置**
+### 非持久化设置
 
 持久性是数据库的一项功能，它保证记录已提交的事务，即使服务器崩溃或断电也是如此。然而，持久性会增加显著的数据库开销，因此，如果您的站点不需要这种保证，可以配置 postgres 以更快地运行。以下是您可以在这种情况下进行的一些配置更改以提高性能。除非下文另有说明，否则在数据库软件崩溃的情况下仍然保证持久性；只有突然的操作系统崩溃才会导致使用这些设置时存在数据丢失或损坏的风险。
 
@@ -3701,6 +3716,7 @@ createdb -T template0 dbname
 
 在 pg_database 中，每个数据库都有两个有用的标志：datistemplate 和 datallowconn 列。datistemplate 可以设置为指示数据库旨在作为 CREATE DATABASE 的模板。如果设置了此标志，则任何具有 CREATEDB 权限的用户都可以克隆该数据库；如果未设置，则只有超级用户和数据库的所有者可以克隆该数据库。如果 datallowconn 为 false，则不允许与该数据库建立任何新连接（但现有会话不会因为简单地设置该标志为 false 而终止）。template0 数据库通常标记为 datallowconn = false，以防止其被修改。template0 和 template1 都应始终标记为 datistemplate = true
 
+> [!Tip]
 > template1 和 template0 除了 template1 的名称是 CREATE DATABASE 的默认源数据库名称这一事实之外，没有任何特殊状态。例如，可以删除 template1 并从 template0 重新创建它，而不会产生任何不良影响。如果有人不小心在 template1 中添加了一堆垃圾，则此操作可能是明智的。（要删除 template1，它必须具有 pg_database.datistemplate = false。）
 > 当初始化数据库集群时，也会创建 postgres 数据库。此数据库旨在作为用户和应用程序连接的默认数据库。它只是 template1 的副本，如有必要，可以删除并重新创建
 
@@ -3722,7 +3738,7 @@ PostgreSQL 的 VACUUM 命令必须定期处理每个表，原因如下：
 
 VACUUM 有两种变体：标准 VACUUM 和 VACUUM FULL。VACUUM FULL 可以回收更多的磁盘空间，但运行速度要慢得多。此外，标准形式的 VACUUM 可以与生产数据库操作并行运行。（诸如 SELECT、INSERT、UPDATE 和 DELETE 之类的命令将继续正常运行，尽管您将无法在使用诸如 ALTER TABLE 之类的命令清理表时修改表的定义。）VACUUM FULL 需要对其正在处理的表使用 ACCESS EXCLUSIVE 锁，因此不能与其他表的使用并行进行。因此，一般来说，管理员应该努力使用标准 VACUUM，避免使用 VACUUM FULL。
 
-VACUUM 会产生大量的 I/O 流量，这可能会导致其他活动会话的性能不佳。可以调整配置参数以减少后台清理对性能的影响 — 请参阅第 19.4.4 节。
+VACUUM 会产生大量的 I/O 流量，这可能会导致其他活动会话的性能不佳。可以调整配置参数以减少后台清理对性能的影响
 
 ### 回收磁盘空间
 
