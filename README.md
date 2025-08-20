@@ -12,9 +12,9 @@
 |                           | [常用数据函数](#常用数据函数) | [存储过程](#存储过程)     | [数据库管理](#数据库管理)       |
 |                           | [系统管理函数](#系统管理函数) | [模式管理](#模式管理)     | [数据库维护](#数据库维护)       |
 |                           | [系统信息函数](#系统信息函数) | [表分区](#表分区)         | [备份与恢复](#备份与恢复)       |
-|                           | [常用表达式](#常用表达式)     | [角色管理](#角色管理)     |                                 |
-|                           | [窗口函数](#窗口函数)         | [行安全策略](#行安全策略) |                                 |
-|                           | [视图](#视图)                 | [客户端认证](#客户端认证) |                                 |
+|                           | [常用表达式](#常用表达式)     | [角色管理](#角色管理)     | [预写式日志](#预写式日志)       |
+|                           | [窗口函数](#窗口函数)         | [行安全策略](#行安全策略) | [复制](#复制)                   |
+|                           | [视图](#视图)                 | [客户端认证](#客户端认证) | [逻辑复制](#逻辑复制)           |
 |                           | [连接语句](#连接语句)         | [索引](#索引)             |                                 |
 |                           | [权限管理](#权限管理)         | [性能提示](#性能提示)     |                                 |
 |                           |                               | [功能扩展](#功能扩展)     |                                 |
@@ -543,7 +543,7 @@ CREATE TABLE orders (
 
 ## 常用数据函数
 
-**字符串函数**
+### 字符串函数
 
 - 长度、截取、拼接
 ```sql
@@ -585,7 +585,7 @@ SELECT REPLACE('hello world', 'world', 'postgres'); -- 'hello postgres' 替换
 SELECT SUBSTRING('postgres' FROM 5 FOR 3); -- 'gre'  截取子字符串
 ```
 
-**日期和时间**
+### 日期和时间
 ```sql
 SELECT NOW();          -- 获取当前时间戳
 
@@ -610,7 +610,7 @@ SELECT NOW() - INTERVAL '1 hour'; -- 计算 1 小时前的时间
 SELECT TO_CHAR(NOW(), 'YYYY-MM-DD HH24:MI:SS'); -- 格式化日期
 ```
 
-**数学**
+### 数学逻辑
 ```sql
 SELECT ABS(-10);       -- 10  绝对值
 
@@ -633,7 +633,7 @@ SELECT EXP(1);         -- 2.718281828459045  e 的指数
 SELECT LOG(10);        -- 2.302585092994046  以 e 为底的对数
 ```
 
-**条件判断**
+### 条件判断
 ```sql
 SELECT COALESCE(NULL, 'default'); -- 'default'  返回第一个非 NULL 值
 
@@ -646,7 +646,7 @@ SELECT CASE
 END AS age_group FROM people;
 ```
 
-**数组**
+### 数组
 ```sql
 SELECT ARRAY[1, 2, 3] || ARRAY[4, 5]; -- {1,2,3,4,5}  数组合并
 
@@ -657,7 +657,7 @@ SELECT ARRAY_REMOVE(ARRAY[1, 2, 3], 2); -- {1,3}  移除元素
 SELECT UNNEST(ARRAY[1,2,3]); -- 拆分数组
 ```
 
-**Json**
+### JSON
 ```sql
 SELECT '{"name": "Alice", "age": 25}'::json->>'name'; -- 'Alice'
 
@@ -668,7 +668,7 @@ SELECT jsonb_build_object('name', 'Bob', 'age', 30); -- 生成Json数据
 SELECT jsonb_array_elements('[1,2,3]'::jsonb); -- 拆解 JSON 数组
 ```
 
-**序列和 ID 处理**
+### 序列和 ID 处理
 ```sql
 -- 创建序列
 CREATE SEQUENCE my_sequence
@@ -687,7 +687,7 @@ SELECT setval('my_sequence', 100); -- 设置序列当前值
 DROP SEQUENCE my_sequence; -- 删除
 ```
 
-**实用函数**
+### 实用函数
 ```sql
 SELECT MD5('password'); -- 计算 MD5 哈希值
 
@@ -698,7 +698,7 @@ SELECT VERSION(); -- 获取 postgres 版本
 SELECT PG_SIZE_PRETTY(PG_DATABASE_SIZE('mydb')); -- 获取数据库大小
 ```
 
-**聚合函数**
+### 聚合函数
 
 ```sql
 SELECT COUNT(*) FROM users; -- 统计行数
@@ -992,17 +992,14 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 
 ### 角色与权限管理
 
-| 函数                                             | 说明                             | 示例                                                                       |
-| ------------------------------------------------ | -------------------------------- | -------------------------------------------------------------------------- |
-| `pg_has_role(role, privilege)`                   | 检查当前用户是否具有指定角色权限 | `SELECT pg_has_role('myrole', 'USAGE');`                                   |
-| `pg_has_any_role(role)`                          | 检查当前用户是否属于某个角色     | `SELECT pg_has_any_role('myrole');`                                        |
-| `pg_has_table_privilege(user, table, privilege)` | 检查表权限                       | `SELECT pg_has_table_privilege('user1', 'mytable', 'SELECT');`             |
-| `pg_has_sequence_privilege(...)`                 | 检查序列权限                     | `SELECT pg_has_sequence_privilege('user1', 'mysequence', 'USAGE');`        |
-| `pg_has_function_privilege(...)`                 | 检查函数权限                     | `SELECT pg_has_function_privilege('user1', 'myfunc(integer)', 'EXECUTE');` |
-| `pg_has_column_privilege(...)`                   |                                  |                                                                            |
-
-
-\| 检查列权限                      | `SELECT pg_has_column_privilege('user1', 'mytable', 'mycolumn', 'SELECT');` |
+| 函数                                             | 说明                             | 示例                                                                        |
+| ------------------------------------------------ | -------------------------------- | --------------------------------------------------------------------------- |
+| `pg_has_role(role, privilege)`                   | 检查当前用户是否具有指定角色权限 | `SELECT pg_has_role('myrole', 'USAGE');`                                    |
+| `pg_has_any_role(role)`                          | 检查当前用户是否属于某个角色     | `SELECT pg_has_any_role('myrole');`                                         |
+| `pg_has_table_privilege(user, table, privilege)` | 检查表权限                       | `SELECT pg_has_table_privilege('user1', 'mytable', 'SELECT');`              |
+| `pg_has_sequence_privilege(...)`                 | 检查序列权限                     | `SELECT pg_has_sequence_privilege('user1', 'mysequence', 'USAGE');`         |
+| `pg_has_function_privilege(...)`                 | 检查函数权限                     | `SELECT pg_has_function_privilege('user1', 'myfunc(integer)', 'EXECUTE');`  |
+| `pg_has_column_privilege(...)`                   | 检查列权限                       | `SELECT pg_has_column_privilege('user1', 'mytable', 'mycolumn', 'SELECT');` |
 
 ### 其他管理类函数
 
@@ -1020,7 +1017,7 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 
 ## 常用表达式
 
-**条件表达式**
+### 条件表达式
 
 常用条件表达式一览
 
@@ -1080,7 +1077,7 @@ SELECT GREATEST(price_1, price_2, price_3) AS max_price FROM products;
 SELECT LEAST(price_1, price_2, price_3) AS min_price FROM products;
 ```
 
-**子查询表达式**
+### 子查询表达式
 
 `WHERE` 子句中的子查询
 
@@ -1285,7 +1282,7 @@ FROM sales;
 
 ## 视图
 
-**什么是视图**
+### 什么是视图
 
 视图是一个虚拟表，其内容由一个 SELECT 查询定义，并在每次访问视图时执行查询
 
@@ -1303,7 +1300,7 @@ WHERE condition;
 * 在使用视图时，postgres 会将视图替换成对应的 SELECT 语句
 
 
-**视图的分类**
+### 视图的分类
 
 | 类型       | 描述                                            | 是否持久化数据     |
 | ---------- | ----------------------------------------------- | ------------------ |
@@ -1312,9 +1309,9 @@ WHERE condition;
 | 物化视图   | 将查询结果缓存                                  | 持久化，可定期刷新 |
 | 递归视图   | 使用 WITH RECURSIVE 创建递归层次结构            |                    |
 
-**创建视图**
+### 创建视图
 
-基本语法
+- 基本语法
 
 ```sql
 CREATE VIEW employee_view AS
@@ -1322,21 +1319,21 @@ SELECT id, name, salary FROM employees
 WHERE department = 'Sales';
 ```
 
-带列名别名
+- 带列名别名
 
 ```sql
 CREATE VIEW employee_summary (emp_id, emp_name) AS
 SELECT id, name FROM employees;
 ```
 
-替代 OR REPLACE
+- 替代 OR REPLACE
 
 ```sql
 CREATE OR REPLACE VIEW employee_view AS
 SELECT id, name FROM employees WHERE active = true;
 ```
 
-递归视图
+- 递归视图
 
 ```sql
 WITH RECURSIVE subordinates AS (
@@ -1350,7 +1347,7 @@ SELECT * FROM subordinates;
 ```
 
 
-**物化视图**
+### 物化视图
 
 定义
 
@@ -1377,7 +1374,7 @@ REFRESH MATERIALIZED VIEW mv_sales_summary;
 * 物化视图可以建立索引，提升性能
 
 
-**更新视图**
+### 更新视图
 
 默认规则
 
@@ -1405,7 +1402,7 @@ FOR EACH ROW EXECUTE FUNCTION insert_into_view();
 ```
 
 
-**查询视图**
+### 查询视图
 
 ```sql
 SELECT * FROM employee_view;
@@ -1414,7 +1411,7 @@ SELECT * FROM employee_view;
 你可以对视图使用 `WHERE`、`JOIN`、`ORDER BY` 等操作，就像普通表一样
 
 
-**删除视图**
+### 删除视图
 
 ```sql
 DROP VIEW employee_view;
@@ -1427,7 +1424,7 @@ DROP MATERIALIZED VIEW mv_sales_summary;
 DROP VIEW IF EXISTS employee_view;
 ```
 
-**查看视图定义**
+### 查看视图定义
 
 查看视图 SQL
 
@@ -1441,7 +1438,7 @@ SELECT definition FROM pg_views WHERE viewname = 'employee_view';
 \d+ employee_view
 ```
 
-**视图的高级用法**
+### 视图的高级用法
 
 嵌套视图（视图中调用视图）
 
@@ -1487,7 +1484,7 @@ GRANT SELECT ON public_employee_view TO readonly_user;
 
 ## 连接语句 
 
-**内连接**
+### 内连接
 
 在 postgres 中，INNER JOIN 的行为如下：
 
@@ -1545,7 +1542,7 @@ ON e.dept_id = d.id;
 | Alice          | IT               |
 | Bob            | HR               |
 
-**外连接**
+### 外连接
 
 postgres 中有多种不同的外连接语句，左连接、右连接、全外连接、交叉连接
 
@@ -1761,7 +1758,7 @@ REVOKE ALL ON accounts FROM PUBLIC;
 
 `postgres`事务处理是指在数据库中执行一系列 SQL 语句，使其成为一个不可分割的操作单元，即 要么全部执行成功，要么全部回滚，以确保数据的一致性和完整性
 
-**准备工作**
+### 准备工作
 
 + 创建演示表
 
@@ -1775,7 +1772,7 @@ CREATE TABLE "public"."users" (
 );
 ```
 
-**基本操作**
+### 基本操作
 
 + 提交事务
 
@@ -1817,7 +1814,7 @@ ROLLBACK TO sp2;
 COMMIT; -- 提交事务
 ```
 
-**事务隔离级别**
+### 事务隔离级别
 
 在数据库中，事务隔离级别用于控制多个事务并发执行时的可见性，避免数据不一致的问题。postgres 遵循 ACID（原子性、一致性、隔离性、持久性） 原则，并提供四种事务隔离级别
 
@@ -1972,7 +1969,7 @@ postgres 发现两个事务虽然在一开始都看到工资小于 10000，但�
 - 不要滥用 `SERIALIZABLE`，性能开销大，优先考虑 `REPEATABLE READ` 
 
 
-**设置事务隔离级别**
+### 设置事务隔离级别
 
 在事务中设置
 
@@ -1999,7 +1996,7 @@ default_transaction_isolation = 'read committed'
 
 + 影响所有数据库的默认隔离级别
 
-**自动提交**
+### 自动提交
 
 postgres 默认开启自动提交模式，即每条 SQL 语句都会被自动提交。如果要手动管理事务，需要显式使用 `BEGIN`
 
@@ -2013,14 +2010,14 @@ SET AUTOCOMMIT TO OFF;
 
 `postgres`的触发器`Trigger`是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数（触发器函数）。它常用于 数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景
 
-**触发器的构成**
+### 触发器的构成
 
 一个完整的触发器由两个部分组成：
 
 - 触发器函数：触发器执行的具体逻辑，必须返回 `TRIGGER` 类型
 - 触发器：绑定到表的某个事件上，调用触发器函数
 
-**触发器的类型**
+### 触发器的类型
 
 按照触发时间分类
 
@@ -2040,7 +2037,7 @@ SET AUTOCOMMIT TO OFF;
 + 行级触发器：对受影响的每一行数据触发一次
 + 语句级触发器：对整个 SQL 语句仅触发一次
 
-**创建触发器**
+### 创建触发器
 
 postgres 触发器的创建需要两步：
 
@@ -2136,7 +2133,7 @@ FOR EACH ROW
 EXECUTE FUNCTION prevent_delete();
 ```
 
-**触发器的管理**
+### 触发器的管理
 
 查看已有触发器
 ```sql
@@ -2164,7 +2161,7 @@ DROP FUNCTION IF EXISTS log_user_insert();
 
 postgres 中的存储过程，是一种在数据库中定义的可重复使用的程序单元，用于封装复杂的业务逻辑和数据处理操作，类似编程语言的函数
 
-**示例**
+### 示例
 
 + 创建存储过程
 
@@ -2183,7 +2180,7 @@ END $$;
 CALL insert_users(value1, value2);
 ```
 
-**事务控制**
+### 事务控制
 
 ```sql
 CREATE PROCEDURE update_salary(emp_id INT, new_salary NUMERIC)
@@ -2202,7 +2199,7 @@ END;
 $$;
 ```
 
-**循环**
+### 循环
 
 ```sql
 CREATE PROCEDURE insert_multiple_employees()
@@ -2219,7 +2216,7 @@ END;
 $$;
 ```
 
-**带输入和输出参数**
+### 带输入和输出参数
 
 ```sql
 CREATE PROCEDURE get_employee_salary(IN emp_id INT, OUT emp_salary NUMERIC)
@@ -2231,14 +2228,13 @@ END;
 $$;
 ```
 
-**删除存储过程**
+### 删除存储过程
 
 ```sql
 DROP PROCEDURE xxxxx(TEXT, NUMERIC);
 ```
 
 [返回目录](#目录)
-
 
 ## 模式管理
 
@@ -2873,7 +2869,7 @@ postgres 会从上到下逐行匹配，匹配到第一个满足条件的规则�
 
 ## 索引
 
-**简介**
+### 简介
 
 如果你要执行以下的SQL
 ```sql
@@ -2886,7 +2882,7 @@ SELECT content FROM test1 WHERE id = constant;
 
 要合理的设计和使用索引，不能盲目的使用，索引并非没有缺点。例如，在大表上创建索引可能需要很长时间。默认情况下，postgres 允许在创建索引的同时对表进行读取（SELECT 语句），但写入（INSERT，UPDATE，DELETE）将被阻塞，直到索引构建完成。在生产环境中，这通常是不可接受的。
 
-**索引类型**
+### 索引类型
 
 | 索引类型    | 适用场景/优点                                                                    | 常用操作符                                          | 是否支持排序 | 是否支持唯一约束 |
 | ----------- | -------------------------------------------------------------------------------- | --------------------------------------------------- | ------------ | ---------------- |
@@ -2897,7 +2893,7 @@ SELECT content FROM test1 WHERE id = constant;
 | **SP-GiST** | 稀疏数据、高维数据、分布不均的字段（如IP地址、文本前缀树）                       | 特定操作符                                          | 不支持       | 不支持           |
 | **BRIN**    | 特别适合大表的顺序插入列（如时间戳），体积小，查询范围效率高                     | 依赖顺序扫描                                        | 不支持       | 不支持           |
 
-**表达式索引**
+### 表达式索引
 
 在 postgres 中，表达式索引是一种特殊形式的索引，它不是直接建立在某个列上，而是建立在**列的计算结果（表达式）** 上
 ```sql
@@ -2905,7 +2901,7 @@ CREATE INDEX idx_lower_name ON users (lower(name));
 ```
 这个索引会存储 lower(name) 的结果，适用于你经常在查询中写 WHERE lower(name) = 'xxx' 的情况
 
-**部分索引**
+### 部分索引
 
 在 postgres 中，部分索引是一种只对表中部分行建立的索引
 
@@ -2933,7 +2929,7 @@ CREATE INDEX idx_active_users_email ON users(email) WHERE active = true;
 * 查询 `WHERE active = true AND email = 'xxx'` 时，能直接走这部分索引
 * 对剩下的 95 万不活跃用户完全不走索引，省资源
 
-**仅索引扫描和覆盖索引**
+### 仅索引扫描和覆盖索引
 
 仅索引扫描的和覆盖索引是重要的知识，熟悉它们是写出高效SQL查询语句的关键。但是在聊他两之前，我们还需要一些前置知识。
 
@@ -3990,6 +3986,572 @@ wal_level = replica
 | 目的     | 持续保存 WAL 以备后续恢复        | 根据 WAL 回放恢复到任意时间 |
 | 前提     | 需要开启 archive_mode 并保存归档 | 需要连续归档和一次全量备份  |
 | 使用场景 | 灾备、长时间回溯                 | 误删、数据错误后回退        |
+
+
+[返回目录](#目录)
+
+## 预写式日志
+
+### 可靠性
+
+可靠性是任何严肃的数据库系统的重要属性，PostgreSQL 尽一切可能保证可靠运行。可靠运行的一个方面是，已提交事务记录的所有数据应存储在非易失区域中，该区域可以免受断电、操作系统故障和硬件故障的影响（当然，非易失区域本身发生故障除外）。成功将数据写入计算机的永久存储（磁盘驱动器或等效设备）通常满足此要求。实际上，即使计算机遭受致命损坏，如果磁盘驱动器仍然存在，则可以将它们移动到具有相似硬件的另一台计算机，并且所有已提交的事务都将保持完整。
+
+虽然定期强制将数据写入磁盘盘片看起来像是一个简单的操作，但事实并非如此。由于磁盘驱动器的速度比主内存和 CPU 慢得多，因此在计算机的主内存和磁盘盘片之间存在多层缓存。首先是操作系统的缓冲区缓存，它缓存频繁请求的磁盘块并合并磁盘写入。幸运的是，所有操作系统都为应用程序提供了一种强制将写入从缓冲区缓存写入磁盘的方法，并且 PostgreSQL 使用这些功能。（请参阅 wal_sync_method 参数来调整此操作的完成方式。）
+
+接下来，磁盘驱动器控制器中可能存在一个缓存；这在RAID控制器卡上尤其常见。其中一些缓存是写透的，这意味着写入会尽快发送到驱动器。其他是回写，这意味着数据会在稍后的某个时间发送到驱动器。此类缓存可能存在可靠性风险，因为磁盘控制器缓存中的内存是易失性的，并且会在断电时丢失其内容。更好的控制器卡具有电池备份单元 (BBU)，这意味着该卡有一个电池，可以在系统断电时为缓存供电。电源恢复后，数据将被写入磁盘驱动器。
+
+最后，大多数磁盘驱动器都有缓存。有些是写透的，而有些是回写的，并且对于回写驱动器缓存，存在与磁盘控制器缓存相同的关于数据丢失的担忧。消费级 IDE 和 SATA 驱动器尤其可能具有无法在断电时幸存的回写缓存。许多固态驱动器 (SSD) 也具有易失性回写缓存。
+
+这些缓存通常可以禁用；但是，执行此操作的方法因操作系统和驱动器类型而异
+
+- 在 Linux 上，可以使用 hdparm -I 查询 IDE 和 SATA 驱动器；如果 Write cache 旁边有 *，则表示启用了写入缓存。hdparm -W 0 可用于关闭写入缓存。可以使用 sdparm 查询 SCSI 驱动器。使用 sdparm --get=WCE 检查是否启用了写入缓存，使用 sdparm --clear=WCE 禁用它。
+- 在 FreeBSD 上，可以使用 camcontrol identify 查询 IDE 驱动器，并使用 /boot/loader.conf 中的 hw.ata.wc=0 关闭写入缓存；可以使用 camcontrol identify 查询 SCSI 驱动器，并且在可用时可以使用 sdparm 查询和更改写入缓存。
+- 在 Solaris 上，磁盘写入缓存由 format -e 控制。（SolarisZFS文件系统在启用磁盘写入缓存的情况下是安全的，因为它会发出自己的磁盘缓存刷新命令。）
+- 在 Windows 上，如果 wal_sync_method 为 open_datasync（默认），则可以通过取消选中 我的电脑\打开\磁盘驱动器\属性\硬件\属性\策略\启用磁盘写入缓存 来禁用写入缓存。或者，将 wal_sync_method 设置为 fdatasync（仅限 NTFS）或 fsync，这可以防止写入缓存。
+- 在 macOS 上，可以通过将 wal_sync_method 设置为 fsync_writethrough 来防止写入缓存。
+
+最新的 SATA 驱动器（遵循ATAPI-6或更高版本）提供驱动器缓存刷新命令 (FLUSH CACHE EXT)，而 SCSI 驱动器长期以来支持类似的命令 SYNCHRONIZE CACHE。这些命令无法由 PostgreSQL 直接访问，但某些文件系统（例如，ZFS, ext4) 可以使用它们来将数据刷新到启用回写的驱动器上的盘片。不幸的是，当与电池备份单元 (BBU) 磁盘控制器组合时，此类文件系统的行为次优。在这样的设置中，同步命令会将所有数据从控制器缓存强制传输到磁盘，从而消除了 BBU 的大部分好处。您可以运行 pg_test_fsync 程序来查看您是否受到影响。如果受到影响，可以通过关闭文件系统中的写入障碍或重新配置磁盘控制器（如果这是可选项）来重新获得 BBU 的性能优势。如果关闭了写入障碍，请确保电池仍然工作正常；故障电池可能会导致数据丢失。希望文件系统和磁盘控制器设计人员最终会解决这种次优行为。
+
+当操作系统向存储硬件发送写入请求时，它几乎无法确保数据已到达真正非易失的存储区域。相反，管理员有责任确保所有存储组件都确保数据和文件系统元数据的完整性。避免使用具有非电池备份写入缓存的磁盘控制器。在驱动器级别，如果驱动器无法保证数据在关闭前写入，则禁用回写缓存。如果您使用 SSD，请注意，默认情况下，其中许多 SSD 不会遵循缓存刷新命令。您可以使用 diskchecker.pl 测试可靠的 I/O 子系统行为。
+
+数据丢失的另一个风险来自磁盘盘片写入操作本身。磁盘盘片分为扇区，通常每个扇区 512 个字节。每个物理读取或写入操作都会处理整个扇区。当写入请求到达驱动器时，它可能是 512 字节的倍数（PostgreSQL 通常一次写入 8192 字节或 16 个扇区），并且写入过程可能会因随时断电而失败，这意味着写入了一些 512 字节的扇区，而另一些则没有。为了防止此类故障，PostgreSQL 会定期将完整页面映像写入永久 WAL 存储中，在修改磁盘上的实际页面之前。通过这样做，在崩溃恢复期间，PostgreSQL 可以从 WAL 还原部分写入的页面。如果您有防止部分页面写入的文件系统软件（例如，ZFS），则可以通过关闭 full_page_writes 参数来关闭此页面映像。电池备份单元 (BBU) 磁盘控制器不会阻止部分页面写入，除非它们保证数据作为完整 (8kB) 页面写入 BBU。
+
+PostgreSQL 还可以防止存储设备上因硬件错误或长期介质故障而可能发生的一些数据损坏，例如读取/写入垃圾数据。
+
+WAL 文件中的每个单独记录都受到 CRC-32C（32 位）校验和的保护，该校验和使我们能够判断记录内容是否正确。CRC 值在我们写入每个 WAL 记录时设置，并在崩溃恢复、存档恢复和复制期间进行检查。
+
+数据页目前默认不进行校验和，尽管 WAL 记录中记录的完整页面映像会受到保护；有关启用数据校验和的详细信息，请参阅 initdb。
+
+诸如 pg_xact、pg_subtrans、pg_multixact、pg_serial、pg_notify、pg_stat、pg_snapshots 等内部数据结构不会直接进行校验和，也不会通过全页写入来保护页面。但是，在这些数据结构是持久化的情况下，会写入 WAL 记录，以便在崩溃恢复时能够准确地重建最近的更改，并且这些 WAL 记录会按照上述方式进行保护。
+
+pg_twophase 中的各个状态文件会受到 CRC-32C 的保护。
+
+在较大的 SQL 查询中用于排序、物化和中间结果的临时数据文件目前不进行校验和，也不会为这些文件的更改写入 WAL 记录。
+
+PostgreSQL 不会防止可纠正的内存错误，并且假定您将使用采用行业标准纠错码 (ECC) 或更好保护的 RAM 来运行。
+
+### 简介
+预写式日志 (WAL) 是一种确保数据完整性的标准方法。大多数（如果不是全部）关于事务处理的书籍中都可以找到详细描述。简而言之，WAL的核心概念是，只有在对数据文件（表和索引所在的位置）的更改被记录下来之后，即在描述更改的 WAL 记录被刷新到永久存储之后，才能写入这些更改。如果我们遵循此过程，我们就不需要在每次事务提交时都将数据页刷新到磁盘，因为我们知道，在发生崩溃时，我们将能够使用日志恢复数据库：任何尚未应用于数据页的更改都可以从 WAL 记录中重做。（这是前滚恢复，也称为 REDO。）
+
+> [!Tip]
+>因为WAL在崩溃后恢复数据库文件内容，所以对于数据文件或 WAL 文件的可靠存储来说，日志文件系统不是必需的。事实上，日志开销可能会降低性能，尤其是当日志记录导致文件系统数据被刷新到磁盘时。幸运的是，通常可以通过文件系统挂载选项禁用日志记录期间的数据刷新，例如，Linux ext3 文件系统上的 data=writeback。日志文件系统确实可以提高崩溃后的启动速度。
+
+使用WAL可以显著减少磁盘写入次数，因为为了保证事务被提交，只需要将 WAL 文件刷新到磁盘，而不是每次事务更改的数据文件都刷新到磁盘。WAL 文件是顺序写入的，因此同步 WAL 的成本远低于刷新数据页的成本。对于处理许多接触数据存储不同部分的小型事务的服务器来说尤其如此。此外，当服务器处理许多小型并发事务时，一次 fsync WAL 文件可能足以提交许多事务。
+
+WAL也使得支持在线备份和时间点恢复成为可能，如第 25.3 节中所述。通过归档 WAL 数据，我们可以支持恢复到可用 WAL 数据覆盖的任何时间点：我们只需安装数据库的先前物理备份，并重放 WAL 到所需时间即可。更重要的是，物理备份不必是数据库状态的瞬时快照 — 如果它是在一段时间内制作的，那么重放该期间的 WAL 将修复任何内部不一致性。
+
+### 异步提交
+
+异步提交 是一种允许事务更快完成的选项，其代价是如果数据库崩溃，则最近的事务可能会丢失。在许多应用程序中，这是一个可以接受的权衡。
+
+如上一节所述，事务提交通常是同步的：服务器在将事务的WAL记录刷新到永久存储之前，会等待，然后再向客户端返回成功指示。因此，即使在服务器立即崩溃的情况下，客户端也可以保证报告已提交的事务会被保留。但是，对于短事务，这种延迟是总事务时间的主要组成部分。选择异步提交模式意味着服务器在事务逻辑完成时立即返回成功，在它生成的WAL记录实际写入磁盘之前。这可以为小事务提供显着的吞吐量提升。
+
+异步提交引入了数据丢失的风险。在向客户端报告事务完成和事务真正提交（即，如果服务器崩溃，保证不会丢失）之间存在一个很短的时间窗口。因此，如果客户端将采取依赖于事务将被记住的假设的外部操作，则不应使用异步提交。例如，银行肯定不会将异步提交用于记录 ATM 机取款的交易。但在许多场景中，例如事件日志记录，不需要这种强大的保证。
+
+使用异步提交所承担的风险是数据丢失，而不是数据损坏。如果数据库崩溃，它将通过重放WAL到最后刷新的记录来恢复。因此，数据库将被恢复到自洽状态，但任何尚未刷新到磁盘的事务都不会反映在该状态中。因此，最终效果是丢失最后几个事务。由于事务按提交顺序重放，因此不会引入不一致性——例如，如果事务 B 进行了依赖于先前事务 A 的效果的更改，则不可能在保留 B 的效果的同时丢失 A 的效果。
+
+用户可以选择每个事务的提交模式，以便可以同时运行同步和异步提交事务。这允许在性能和事务持久性的确定性之间进行灵活的权衡。提交模式由用户可设置的参数 synchronous_commit 控制，该参数可以以任何配置参数可以设置的方式更改。任何一个事务使用的模式取决于事务提交开始时 synchronous_commit 的值。
+
+某些实用程序命令，例如 DROP TABLE，无论 synchronous_commit 的设置如何，都强制同步提交。这是为了确保服务器的文件系统和数据库的逻辑状态之间的一致性。支持两阶段提交的命令（例如 PREPARE TRANSACTION）也始终是同步的。
+
+如果数据库在异步提交和写入事务的WAL记录之间的风险窗口内崩溃，那么该事务期间所做的更改将会丢失。风险窗口的持续时间是有限的，因为后台进程（“WAL 写入器”）每 wal_writer_delay 毫秒将未写入的WAL记录刷新到磁盘。风险窗口的实际最大持续时间是 wal_writer_delay 的三倍，因为 WAL 写入器被设计为在繁忙期间倾向于一次写入整个页面。
+
+> [!Warning]
+> 立即模式关闭等同于服务器崩溃，因此会导致任何未刷新的异步提交丢失。
+
+异步提交提供的行为与设置 fsync = off 不同。fsync 是一个服务器范围的设置，它会改变所有事务的行为。它禁用 PostgreSQL 中所有尝试将写入同步到数据库不同部分的逻辑，因此，系统崩溃（即硬件或操作系统崩溃，而不是 PostgreSQL 本身故障）可能会导致数据库状态的任意严重损坏。在许多场景中，异步提交提供了可以通过关闭 fsync 获得的大部分性能提升，但没有数据损坏的风险。
+
+commit_delay 听起来也很像异步提交，但它实际上是一种同步提交方法（实际上，在异步提交期间会忽略 commit_delay）。commit_delay 会在事务刷新WAL到磁盘之前造成延迟，希望一个这样的事务执行的单个刷新也可以服务于大约在同一时间提交的其他事务。该设置可以被认为是增加事务可以加入即将参与单个刷新的组的时间窗口，以分摊多个事务之间的刷新成本的一种方法。
+
+### 配置
+
+1. WAL 工作机制
+
+WAL（Write-Ahead Logging，预写式日志）是 PostgreSQL 保证 **事务一致性** 和 **崩溃恢复** 的核心。
+
+1. **修改数据时**：先写 WAL，再写共享缓冲区。
+2. **事务提交时**：WAL 必须 **fsync 落盘** 才算提交成功（除非 `synchronous_commit=off`）。
+3. **后台进程**：
+
+   * **WAL Writer**：负责周期性写 WAL 文件，减少事务提交时的 fsync 压力。
+   * **Checkpointer**：将脏页刷回数据文件，减少崩溃恢复时需要重放的 WAL 数量。
+   * **Archiver**：如果开启归档，会把完成的 WAL 段文件存储到安全位置。
+   * **WAL Sender / Receiver**：用于流复制。
+
+2. WAL 参数详细解读
+
+(A) 基础控制
+
+| 参数                 | 取值                                             | 说明                    | 场景                                                            |
+| -------------------- | ------------------------------------------------ | ----------------------- | --------------------------------------------------------------- |
+| `wal_level`          | `minimal` / `replica` / `logical`                | 控制 WAL 记录的详细程度 | `replica`：主从复制；`logical`：逻辑复制；`minimal`：仅本地恢复 |
+| `fsync`              | on/off                                           | 是否强制刷盘            | 一般必须 `on`，否则掉电丢数据                                   |
+| `synchronous_commit` | on/off/remote\_apply/remote\_write/remote\_flush | 提交时的 WAL 刷盘策略   | `on` 安全，`off` 快但可能丢几 ms 数据                           |
+
+
+(B) 空间与内存
+
+| 参数               | 默认            | 说明                                | 调优                    |
+| ------------------ | --------------- | ----------------------------------- | ----------------------- |
+| `wal_segment_size` | 16MB            | 单个 WAL 文件大小，编译时固定       | 编译时可改为 64MB/256MB |
+| `wal_buffers`      | -1（通常 16MB） | WAL 写入的共享内存缓存              | 高并发写场景调到 64MB+  |
+| `max_wal_size`     | 1GB             | 自动 checkpoint 前允许的 WAL 最大量 | OLTP 可设 4–8GB         |
+| `min_wal_size`     | 80MB            | checkpoint 后保留的 WAL 空间        | 建议 512MB–1GB          |
+
+
+(C) 写入与延迟
+
+| 参数                     | 默认  | 说明                                      | 调优                                 |
+| ------------------------ | ----- | ----------------------------------------- | ------------------------------------ |
+| `wal_writer_delay`       | 200ms | WAL Writer 写入频率                       | 可以调小（50–100ms）降低 commit 卡顿 |
+| `wal_writer_flush_after` | 1MB   | 累积多少字节后强制刷盘                    | 高 IOPS 环境可设 2–4MB               |
+| `commit_delay`           | 0     | 提交时延迟（μs），允许更多事务合并        | 在高并发下可设 50–200 μs             |
+| `commit_siblings`        | 5     | 并发事务数达到多少时才启用 `commit_delay` | OLTP 可设 10–20                      |
+
+
+(D) 归档与备份
+
+| 参数              | 默认 | 说明                        | 示例                                       |
+| ----------------- | ---- | --------------------------- | ------------------------------------------ |
+| `archive_mode`    | off  | 是否启用归档                | `on` or `always`                           |
+| `archive_command` | 空   | 每个 WAL 文件完成时执行命令 | `test ! -f /backup/%f && cp %p /backup/%f` |
+| `archive_timeout` | 0    | 即使未写满也切换 WAL 的时间 | 建议 60s，保证 PITR 恢复及时               |
+
+
+(E) 复制与高可用
+
+| 参数                    | 默认 | 说明                                 |
+| ----------------------- | ---- | ------------------------------------ |
+| `max_wal_senders`       | 10   | 最大 WAL sender 数量（流复制通道数） |
+| `wal_keep_size`         | 0    | 保留多少 WAL 供从库追赶              |
+| `max_replication_slots` | 10   | 逻辑/物理复制槽数量                  |
+| `hot_standby`           | on   | 从库是否可读                         |
+| `primary_conninfo`      | 空   | 从库连接主库的信息                   |
+
+3. 场景化配置最佳实践
+
+(A) OLTP（高并发交易系统）
+
+```conf
+wal_level = replica
+synchronous_commit = on
+wal_compression = on
+wal_buffers = 64MB
+max_wal_size = 8GB
+min_wal_size = 1GB
+wal_writer_delay = 50ms
+commit_delay = 100
+commit_siblings = 20
+```
+
+适合高并发写，保证安全和性能平衡。
+
+
+(B) 数据仓库 / 批量导入
+
+```conf
+wal_level = minimal
+synchronous_commit = off
+wal_compression = off
+wal_buffers = 32MB
+max_wal_size = 16GB
+```
+
+追求吞吐量，牺牲部分安全。
+
+
+(C) 流复制主库
+
+```conf
+wal_level = replica
+archive_mode = on
+archive_command = 'rsync -a %p standby:/wal_archive/%f'
+max_wal_senders = 10
+max_replication_slots = 10
+wal_keep_size = 2GB
+```
+
+保证从库能及时追上，避免 WAL 丢失。
+
+
+(D) 逻辑复制（CDC、Debezium）
+
+```conf
+wal_level = logical
+max_replication_slots = 20
+max_wal_senders = 20
+wal_keep_size = 4GB
+```
+
+适合消息队列同步、异构系统。
+
+
+常见问题与调优思路
+
+1. **WAL 占用太大？**
+
+   * 检查 `max_wal_size` 是否过大
+   * 看 `archive_command` 是否失败（堆积）
+   * 复制槽是否未消费（逻辑复制常见）
+
+2. **提交性能差？**
+
+   * 检查 `synchronous_commit`，必要时用 `off`
+   * 增大 `wal_buffers`
+   * 调整 `wal_writer_delay`
+   * 用 `commit_delay` 聚合提交
+
+3. **归档不及时？**
+
+   * 设置 `archive_timeout`（比如 60s）
+   * 确认归档目录有空间
+
+4. **复制延迟大？**
+
+   * 增加 `wal_keep_size`
+   * 检查从库 `max_standby_streaming_delay` 设置
+   * 优化主库磁盘 IO
+
+
+### 内部结构
+
+WAL会自动启用；不需要管理员采取任何操作（除了确保满足WAL文件的磁盘空间需求，并且已执行任何必要的调整（参见 章节 28.5）。
+
+WAL记录追加到WAL文件中，因为每写一条新记录会记录一条新记录。插入位置由日志序列号 (LSN) 来描述，这是一个 WAL 中的字节偏移量，每个新记录单调增加。LSN值作为数据类型 pg_lsn 返回。可以比较值来计算将它们分开的WAL数据量，因此它们用于衡量复制和恢复的进度。
+
+WAL文件存储在数据目录下的目录 pg_wal 中，作为一组段文件，通常每个大小为 16 MB（但可以更改大小，方法是更改 --wal-segsize initdb 选项）。每个段被划分为页面，通常每个 8 kB（可以通过 --with-wal-blocksize 配置选项更改此大小）。WAL 记录头在 access/xlogrecord.h 中描述；记录内容取决于要记录的事件类型。段文件以不断增长的数字作为名称，从 000000010000000000000001 开始。数字不会换行，但是需要很长时间才能耗尽可用的数字库存。
+
+如果 WAL 位于与其他数据库文件不同的磁盘上，则有利。可以通过将 pg_wal 目录移动到其他位置来实现此目的（当然，在服务器关闭时）以及从主数据目录中的原始位置创建到新位置的符号链接。
+
+其WAL旨在确保在更改数据库记录之前写入日志，但是可能会被磁盘驱动器 颠覆，当实际情况是这些驱动器只缓存了数据但尚未将其存储在磁盘上时，该驱动器错误地向内核报告成功写入。这种情况下的断电可能导致无法恢复的数据损坏。管理员应尽量确保存储 PostgreSQL 的磁盘WAL文件不做出此类错误的报告。（参见 章节 28.1。）
+
+在完成检查点并刷新 WAL 后，检查点的位置会保存在 pg_control 文件中。因此，在恢复开始时，服务器首先读取 pg_control 以及检查点记录；然后从检查点记录中指示的 WAL 位置向前扫描，执行 REDO 操作。因为在检查点之后的数据页面的整个内容保存在 WAL 中，它是对第一个页面修改之后的内容保存的（假设未禁用 full_page_writes），所以在检查点后发生更改的所有页面都将恢复为一致的状态。
+
+为了处理 pg_control 已损坏的情况，我们应该支持按相反的顺序（从最新到最旧）扫描现有 WAL 段的可能性，以便找到最新的检查点。该操作尚未实施。 pg_control 非常小（小于一页），以至于不会出现部分写入问题，并且在撰写本文时，还没有出现仅因无法读取 pg_control 本身而导致数据库故障的情况。所以，尽管从理论上这是一个弱点，但实际上 pg_control 似乎没有问题。
+
+[返回目录](#目录)
+
+## 复制
+
+PostgreSQL 的主从复制方法主要分为几大类，每种方法有不同的适用场景：
+
+### 物理复制
+
+基于 **WAL（Write-Ahead Log）日志**，将主库的 WAL 数据流式传输或归档到从库，保证二进制级别的数据一致性。
+
+* **流复制（Streaming Replication）**
+
+  * PostgreSQL 原生支持
+  * 从库直接通过 TCP 连接从主库拉取 WAL 日志
+  * 从库只读，不能写
+  * 可配合 **同步复制**（保证主从一致性，牺牲写延迟）或 **异步复制**（提高性能，但可能丢失数据）
+  * 常与 **热备份（Hot Standby）** 一起用，从库可提供读服务
+
+* **日志归档复制（Log Shipping）**
+
+  * 将主库的 WAL 段文件定期归档到从库（例如通过 `archive_command`）
+  * 从库持续应用 WAL 文件恢复数据
+  * 延迟较大，实时性差
+  * 通常用于 **灾备（DR）** 场景
+
+* **级联复制（Cascading Replication）**
+
+  * 从库再作为上级，从它继续复制给下级
+  * 适合大规模分发（减少主库压力）
+
+
+- 逻辑复制
+
+基于 SQL 层的变更流，而不是 WAL 二进制日志。
+
+* **发布/订阅（Publication/Subscription，自 PostgreSQL 10 引入）**
+
+  * 可以复制指定的 **表**（而不是整个数据库）
+  * 允许从库独立写入（不会像物理复制那样锁死）
+  * 支持跨版本、跨平台复制
+  * 适合做 **多源复制、数据分发、在线迁移**
+
+* **基于触发器的逻辑复制**（如 `pglogical`, `Bucardo`）
+
+  * 第三方工具实现
+  * 通过触发器捕获变化并同步
+  * 功能强大，但性能略低
+
+
+### 第三方工具复制
+
+* **Slony-I**：老牌逻辑复制，支持主从切换，但配置复杂
+* **Bucardo**：支持多主复制（multi-master），基于触发器
+* **pglogical**：Postgres 官方支持的扩展，逻辑复制增强版
+* **Citus**：将 PostgreSQL 变成分布式数据库，水平分片 + 复制
+
+### 一主多从复制
+
+在 PostgreSQL 一主多从的架构中，本质上还是基于主从复制或其他方式，只不过主库会把 WAL 日志同时推送给多个从库。这样，主库负责写操作，从库负责读操作，实现读写分离、读扩展
+
+
+**基于 Streaming Replication 的一主多从**
+
+这是最常用的方式，依赖于 WAL 日志流复制
+
+### 主库配置
+
+`postgresql.conf`：
+
+```conf
+wal_level = replica
+max_wal_senders = 10       # 支持同时发送给多个从库
+wal_keep_size = 256        # 保留 WAL 大小，避免从库追不上
+archive_mode = on
+archive_command = 'cp %p /var/lib/pgsql/archive/%f'
+```
+
+`pg_hba.conf`：
+
+```conf
+host replication replicator 192.168.1.0/24 md5
+```
+
+主库创建复制用户：
+
+```sql
+CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'secret';
+```
+
+### 从库配置
+
+假设有两个从库 `slave1` 和 `slave2`。
+首先，做数据目录的基线拷贝：
+
+```bash
+pg_basebackup -h master_ip -D /var/lib/pgsql/data -U replicator -P -R
+```
+
+然后分别启动，从库会自动去主库拉取 WAL 流
+这样就完成了一主两从的流复制
+
+
+**基于逻辑复制的一主多从**
+
+逻辑复制适合只复制部分表或者库，并支持跨版本
+
+### 主库配置
+
+`postgresql.conf`：
+
+```conf
+wal_level = logical
+max_replication_slots = 10
+max_wal_senders = 10
+```
+
+创建发布端：
+
+```sql
+CREATE PUBLICATION pub_all FOR ALL TABLES;
+```
+
+### 从库配置
+
+从库1：
+
+```sql
+CREATE SUBSCRIPTION sub_slave1 
+CONNECTION 'host=master_ip dbname=mydb user=replicator password=secret'
+PUBLICATION pub_all;
+```
+
+从库2：
+
+```sql
+CREATE SUBSCRIPTION sub_slave2 
+CONNECTION 'host=master_ip dbname=mydb user=replicator password=secret'
+PUBLICATION pub_all;
+```
+
+这样主库的表会同步到两个从库
+
+
+**基于触发器/工具 (Londiste, Slony-I, Bucardo) 的一主多从**
+
+适合对旧版本 PostgreSQL 或者需要复杂拓扑（多主、多从）
+例如使用 **Bucardo**：
+
+### 主库配置
+
+```bash
+bucardo add db masterdb dbname=mydb host=master_ip user=replicator pass=secret
+```
+
+### 从库配置
+
+```bash
+bucardo add db slave1 dbname=mydb host=slave1_ip user=replicator pass=secret
+bucardo add db slave2 dbname=mydb host=slave2_ip user=replicator pass=secret
+```
+
+创建复制关系：
+
+```bash
+bucardo add sync my_sync relgroup=mygroup dbs=masterdb:source,slave1:target,slave2:target
+bucardo start
+```
+
+**级联复制 (Cascading Replication)**
+
+如果主库压力过大，可以让一个从库再去给其他从库提供复制流。
+
+比如：
+
+```
+Master → Slave1 → Slave2
+```
+
+### 配置 Slave1 为中继
+
+在 `postgresql.conf` 中：
+
+```conf
+hot_standby = on
+max_wal_senders = 5
+```
+
+Slave2 连接 Slave1，而不是 Master：
+
+```bash
+pg_basebackup -h slave1_ip -D /var/lib/pgsql/data -U replicator -P -R
+```
+
+这样 Master 只需要推送一次 WAL，Slave1 分发给其他从库，减轻了 Master 负担。
+
+[返回目录](#目录)
+
+## 逻辑复制
+
+### 什么是逻辑复制
+
+逻辑复制是一种基于**SQL 语义级别**的复制方式，它不同于物理复制, 基于 WAL 日志字节流的复制）：
+
+* **物理复制**：整个数据库集群按字节流复制，要求主从版本一致、架构一致，通常是「一主多从」做读写分离或高可用。
+* **逻辑复制**：基于 **表级别的数据变更（INSERT、UPDATE、DELETE）** 进行复制，可以选择只复制某些表的数据，甚至支持跨版本、跨平台复制。
+
+逻辑复制使用的是发布和订阅模型
+
+
+### 逻辑复制的核心概念
+
+* **Publication（发布端）**：
+  在主库定义一个发布规则，声明哪些表的数据变化会被发布。
+
+  ```sql
+  CREATE PUBLICATION mypub FOR TABLE users, orders;
+  ```
+
+* **Subscription（订阅端）**：
+  在从库上定义一个订阅，指定订阅哪个发布，以及如何连接主库。
+
+  ```sql
+  CREATE SUBSCRIPTION mysub
+  CONNECTION 'host=192.168.1.10 dbname=mydb user=repuser password=secret port=5432'
+  PUBLICATION mypub;
+  ```
+
+* **逻辑解码（Logical Decoding）**：
+  PostgreSQL 将 WAL 日志里的变更解码成 SQL 层面的变化（INSERT/UPDATE/DELETE），再传递给订阅端。
+
+### 使用场景
+
+* **跨版本升级**：比如从 PostgreSQL 12 升级到 16，可以用逻辑复制逐步迁移数据。
+* **部分表复制**：只复制某些业务相关表，不需要整个库。
+* **跨平台/跨架构**：主库和从库可以运行在不同操作系统、甚至不同 PostgreSQL 版本。
+* **数据同步到分析库**：业务库负责写，订阅库用来跑报表或 BI。
+
+### 配置步骤
+
+假设：
+
+* 主库：`192.168.1.10`
+* 从库：`192.168.1.20`
+* 数据库：`mydb`
+
+(1) 主库配置
+
+`postgresql.conf` 修改：
+
+```conf
+wal_level = logical
+max_replication_slots = 10
+max_wal_senders = 10
+```
+
+`pg_hba.conf` 添加允许复制用户访问：
+
+```conf
+host replication repuser 192.168.1.20/32 md5
+host mydb      repuser 192.168.1.20/32 md5
+```
+
+重启 PostgreSQL。
+
+创建用户：
+
+```sql
+CREATE ROLE repuser WITH LOGIN REPLICATION PASSWORD 'secret';
+```
+
+创建发布：
+
+```sql
+CREATE PUBLICATION mypub FOR TABLE users, orders;
+```
+
+
+(2) 从库配置
+
+在订阅端执行：
+
+```sql
+CREATE SUBSCRIPTION mysub
+CONNECTION 'host=192.168.1.10 port=5432 dbname=mydb user=repuser password=secret'
+PUBLICATION mypub;
+```
+
+Postgres 会自动复制 **已有数据**（除非指定 `WITH (copy_data = false)`），之后保持增量同步。
+
+### 常用操作
+
+* **添加新表到发布**
+
+  ```sql
+  ALTER PUBLICATION mypub ADD TABLE products;
+  ```
+* **删除表**
+
+  ```sql
+  ALTER PUBLICATION mypub DROP TABLE orders;
+  ```
+* **删除订阅**
+
+  ```sql
+  DROP SUBSCRIPTION mysub;
+  ```
+* **查看复制状态**
+
+  ```sql
+  \dRp+   -- 查看 publication
+  \dRs+   -- 查看 subscription
+  ```
+
+
+### 注意事项
+
+* 主从必须使用 **相同的数据库编码 (UTF8/GBK 等)**，否则可能出问题。
+* 表必须有 **主键** 或唯一约束，否则 UPDATE/DELETE 无法确定行。
+* 逻辑复制只支持 **DML (数据变更)**，不支持 DDL（比如 ALTER TABLE 不会同步）。
+* 如果订阅端的表已有数据，要小心冲突。
+* 一般用于 **数据迁移、分库分表、异地容灾、读写分离**。
+
+
 
 
 [返回目录](#目录)
