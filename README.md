@@ -3513,30 +3513,30 @@ pg_dump 生成的转储脚本会自动应用以上几个但不是全部的指导
 ## 功能扩展
 
 
-**pg_stat_statements 扩展**
+### pg_stat_statements 扩展
 
-插件简介
+**插件简介**
 
 `pg_stat_statements`是`postgres`官方提供的 SQL 统计与分析插件，用于记录数据库中执行的 SQL 语句的频率、耗时、IO 使用、命中率、调用次数等指标，是性能调优和瓶颈分析的重要工具
 
 > 它可以聚合结构相同但参数不同的 SQL，提供清晰的执行统计信息
 
-工作原理
+**工作原理**
 
 * postgres 在查询执行阶段自动将 SQL 记录到`pg_stat_statements`内部结构中
 * 插件会对每条 SQL 生成哈希值（queryid），以进行聚合
 * 所有数据存储在内存中，重启数据库后可保留，除非手动清空
 * 插件记录包括：调用次数、执行时间、返回行数、IO 读写等指标
 
-安装与配置步骤
+**安装与配置**
 
-步骤 1：修改 `postgresql.conf`
+- 步骤 1：修改 `postgresql.conf`
 
 ```conf
 shared_preload_libraries = 'pg_stat_statements'
 ```
 
-步骤 2：重启数据库
+- 步骤 2：重启数据库
 
 ```bash
 -- 需要知道数据目录的位置
@@ -3546,19 +3546,19 @@ pg_ctl restart -D /your/data/dir;
 SHOW data_directory;
 ```
 
-步骤 3：在数据库中启用扩展
+- 步骤 3：在数据库中启用扩展
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 ```
 
-步骤 4：查看是否启用成功
+- 步骤 4：查看是否启用成功
 
 ```sql
 SELECT * FROM pg_extension WHERE extname = 'pg_stat_statements';
 ```
 
-表结构字段说明
+**表结构字段说明**
 
 ```sql
 -- 使用psql查看
@@ -3592,9 +3592,9 @@ SELECT * FROM pg_extension WHERE extname = 'pg_stat_statements';
 | `blk_read_time`       | double | 读取块所花总时间（ms）   |
 | `blk_write_time`      | double | 写块总时间（ms）         |
 
-使用示例
+### 示例
 
-示例 1：查看执行时间最多的 SQL
+- 示例 1：查看执行时间最多的 SQL
 
 ```sql
 SELECT query, calls, total_exec_time, mean_exec_time
@@ -3603,7 +3603,7 @@ ORDER BY total_exec_time DESC
 LIMIT 10;
 ```
 
-示例 2：查看调用次数最多的 SQL
+- 示例 2：查看调用次数最多的 SQL
 
 ```sql
 SELECT query, calls
@@ -3612,7 +3612,7 @@ ORDER BY calls DESC
 LIMIT 10;
 ```
 
-示例 3：查看平均执行时间最长的 SQL
+- 示例 3：查看平均执行时间最长的 SQL
 
 ```sql
 SELECT query, mean_exec_time, calls
@@ -3622,7 +3622,7 @@ ORDER BY mean_exec_time DESC
 LIMIT 10;
 ```
 
-示例 4：查看 IO 密集型 SQL
+- 示例 4：查看 IO 密集型 SQL
 
 ```sql
 SELECT query, shared_blks_read, shared_blks_hit, blk_read_time
@@ -3631,32 +3631,30 @@ ORDER BY shared_blks_read DESC
 LIMIT 10;
 ```
 
-清空统计数据
+- 清空统计数据
 
 ```sql
 SELECT pg_stat_statements_reset();
 ```
 
-注意事项与最佳实践
+- 注意事项与最佳实践
 
 | 项目     | 建议                                                           |
 | -------- | -------------------------------------------------------------- |
 | 内存占用 | 默认最多记录 5000 条语句，可通过 `pg_stat_statements.max` 配置 |
 | 性能开销 | 插件有少量开销（微秒级），建议在生产环境启用，利远大于弊       |
-| 精准度   | SQL 参数会被归一化（? 占位），无法区分不同值，但可判断结构性能 |
+| 精准度   | SQL 参数会被归一化，无法区分不同值，但可判断结构性能           |
 | 聚合方式 | 结构相同 SQL 会聚合，可结合 `queryid` 与日志进一步分析         |
 
-权限要求
+- 权限要求
 
-查询 `pg_stat_statements`：
-
-* 需要超级用户权限，或者被授予`pg_read_all_stats`角色
+查询 `pg_stat_statements`：需要超级用户权限，或者被授予`pg_read_all_stats`角色
 
 ```sql
 GRANT pg_read_all_stats TO your_user;
 ```
 
-相关参数配置
+- 相关参数配置
 
 在 `postgresql.conf` 中：
 
@@ -3667,6 +3665,12 @@ pg_stat_statements.track = all           # 表示收集什么 SQL 执行的信�
 pg_stat_statements.track_utility = on    # 是否统计 COPY、VACUUM 等语句
 pg_stat_statements.save = on             # 是否在重启后保留数据
 ```
+
+### 扩展介绍
+更多关于`pg_stat_statements`插件的知识，你可以查看以下内容获取
+
+- [F.30. pg_stat_statements — 跟踪 SQL 计划和执行的统计信息](https://postgresql.ac.cn/docs/17/pgstatstatements.html)
+- [PostgreSQL 宏观查询优化之 pg_stat_statements](https://blog.vonng.com/pg/pgss/)
 
 [返回目录](#目录)
 
