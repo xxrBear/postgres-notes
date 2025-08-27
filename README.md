@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <img src="https://cdn.jsdelivr.net/gh/xxrBear/image/Hugo/202505152126346.png" height="200"/>
+    <img src="https://cdn.jsdelivr.net/gh/xxrBear/image/Hugo/202505152126346.png" height="100"/>
   </picture>
   <br>
   <a href="https://www.postgresql.org/docs/">PostgreSQL 文档</a>
@@ -25,7 +25,82 @@
 
 ## 安装数据库
 
+### 二进制文件安装
+
 推荐使用官方安装包，前往[下载页](https://www.postgres.org/download/)下载对应系统的安装包
+
+直接运行二进制安装文件即可
+
+### 命令行安装
+
+<details>
+  <summary>Windows</summary>
+
+- 安装包管理工具
+```powershell
+# 必须先用管理员权限打开终端
+
+# 设置执行策略
+Set-ExecutionPolicy Bypass -Scope Process -Force
+
+# 安装 Chocolatey
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# 验证安装
+choco -v
+```
+
+
+- 安装数据库
+```powershell
+# 安装 PostgreSQL
+choco install postgresql
+
+# 启动服务
+net start postgresql-x64-17
+
+# 切换到 psql
+psql -U postgres
+```
+</details>
+
+<details>
+<summary>Debian/Ubuntu</summary>
+
+```bash
+# 安装依赖
+sudo apt update
+sudo apt install -y wget ca-certificates
+
+# 导入仓库签名密钥
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+# 添加 PostgreSQL 仓库
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+# 更新并安装
+sudo apt update
+sudo apt install -y postgresql postgresql-contrib
+```
+</details>
+
+<details>
+<summary>CentOS/RHEL/Fedora</summary>
+
+```bash
+# 安装仓库 RPM
+sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-$(rpm -E %{rhel})-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# 禁用默认 PostgreSQL 模块
+sudo dnf -qy module disable postgresql
+
+# 安装 PostgreSQL
+sudo yum install -y postgresql13-server postgresql13
+```
+</details>
+
+[返回目录](#目录)
 
 ## 查询语句风格
   
