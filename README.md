@@ -1,9 +1,10 @@
 <p align="center">
   <picture>
-    <img src="https://cdn.jsdelivr.net/gh/xxrBear/image/Hugo/202505152126346.png" height="100"/>
+    <img src="https://cdn.jsdelivr.net/gh/xxrBear/image/Hugo/202505152126346.png" height="200"/>
   </picture>
   <br>
-  <a href="https://www.postgresql.org/docs/">PostgreSQL 文档</a>
+  <a href="https://www.postgresql.org/docs/">PostgreSQL 文档</a>|
+  <a href="https://leetcode.cn/problemset/database/">力扣</a>
 </p>
 
 ## 目录
@@ -285,8 +286,8 @@ mydb=# \d -- 显示 mydb 所有表
 **性能与内存相关**
 
 ```sql
-SHOW shared_buffers;                 -- postgres 用于缓存数据块的内存
-SHOW work_mem;                       -- 每个排序、哈希操作的内存大小
+SHOW shared_buffers;                -- postgres 用于缓存数据块的内存
+SHOW work_mem;                      -- 每个排序、哈希操作的内存大小
 SHOW maintenance_work_mem;          -- 维护操作（如VACUUM, CREATE INDEX）使用的内存
 SHOW effective_cache_size;          -- 操作系统文件缓存的估计值
 SHOW random_page_cost;              -- 非顺序读取一个页面的成本估计
@@ -315,13 +316,12 @@ SHOW max_wal_size;                  -- 最大WAL文件总大小
 **日志记录相关**
 
 ```sql
-SHOW log_destination;                -- 日志输出目标（stderr, csvlog等）
+SHOW log_destination;               -- 日志输出目标（stderr, csvlog等）
 SHOW logging_collector;             -- 是否启用日志收集器
 SHOW log_min_duration_statement;    -- 执行超过指定时间的SQL将被记录
 SHOW log_directory;                 -- 日志文件存放目录
 SHOW log_filename;                  -- 日志文件名称模板
 ```
-
 
 **编码、时区、语言**
 
@@ -342,7 +342,6 @@ SHOW enable_seqscan;                -- 是否启用顺序扫描（可用于调�
 SHOW synchronous_commit;            -- 是否同步提交（影响性能与可靠性）
 ```
 
-
 **一次性查看多个参数**
 
 ```sql
@@ -354,11 +353,11 @@ SHOW ALL LIKE '%log%';
 
 ## 自定义运行参数
 
-postgres 安装后的默认配置通常并不适合生产环境的高性能需求，默认配置为了兼容低配置机器，如 512MB 内存老机器
+postgres 安装后的默认配置通常不适合生产环境的高性能需求，默认配置是为了兼容低配置机器，如 512MB 内存容量的机器
 
 推荐使用：[PGTune](https://pgtune.leopard.in.ua/)
 
-输入参数，直接复制配置参数
+输入当前数据库服务器的参数，直接复制数据库配置参数
 
 查看 PG 服务配置文件所在位置
 ```sql
@@ -368,7 +367,6 @@ SHOW config_file;
 修改配置文件并保存，重启数据库
 
 [返回目录](#目录)
-
 
 ## 常用数据类型
 
@@ -395,13 +393,13 @@ SHOW config_file;
 
 ### 日期与时间类型
 
-| 类型          | 描述                                       |
-| ------------- | ------------------------------------------ |
-| `timestamp`   | 无时区时间戳                               |
-| `timestamptz` | 带时区的时间戳（timestamp with time zone） |
-| `date`        | 日期（YYYY-MM-DD）                         |
-| `time`        | 时间（无日期）                             |
-| `interval`    | 时间间隔（如 "2 days 3 hours"）            |
+| 类型          | 描述                            |
+| ------------- | ------------------------------- |
+| `timestamp`   | 无时区时间戳                    |
+| `timestamptz` | 带时区的时间戳                  |
+| `date`        | 日期（YYYY-MM-DD）              |
+| `time`        | 时间（无日期）                  |
+| `interval`    | 时间间隔（如 "2 days 3 hours"） |
 
 ### 布尔类型
 
