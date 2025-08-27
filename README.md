@@ -1,6 +1,10 @@
-<div align="center">
+<p align="center">
+  <picture>
     <img src="https://cdn.jsdelivr.net/gh/xxrBear/image/Hugo/202505152126346.png" height="200"/>
-</div>
+  </picture>
+  <br>
+  <a href="https://www.postgresql.org/docs/">PostgreSQL 文档</a>
+</p>
 
 ## 目录
 
