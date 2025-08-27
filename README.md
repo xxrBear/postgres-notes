@@ -3829,17 +3829,15 @@ pg_ctl start | rotatelogs /var/log/pgsql_log 86400
 
 ### SQL转储
 
-- 什么是SQL转储
-
-这种转储方法背后的思想是生成一个包含 SQL 命令的文件，当这些命令被反馈到服务器时，将以与转储时相同的状态重新创建数据库。PostgreSQL 提供了实用程序 pg_dump 来实现此目的。此命令的基本用法是
+PostgreSQL 提供了 pg_dump 工具，用于生成包含 SQL 命令的转储文件。将该文件重新导入数据库时，便可按转储时的状态完整地重建数据库。其基本用法如下：
 
 ```sql
 pg_dump dbname > dumpfile
 ```
 
-像任何其他 PostgreSQL 客户端应用程序一样，pg_dump 默认情况下将使用与当前操作系统用户名相同的数据库用户名进行连接。要覆盖此设置，请指定 -U 选项或设置环境变量 PGUSER。请记住，pg_dump 连接受正常的客户端身份验证机制的约束
+与其他 PostgreSQL 客户端应用一样，pg_dump 默认使用当前操作系统用户名作为数据库用户名。若需覆盖此设置，可通过 -U 参数或环境变量 PGUSER 指定。pg_dump 遵循常规的客户端认证规则。
 
-由 pg_dump 创建的转储在内部是一致的，这意味着，转储表示 pg_dump 开始运行时数据库的快照。pg_dump 在工作时不会阻止数据库上的其他操作。（例外情况是那些需要使用独占锁进行操作的操作，例如大多数形式的 ALTER TABLE。）
+pg_dump 生成的转储文件在内部是一致的，即它反映了启动时刻数据库的快照。在转储过程中，数据库仍可正常运行，除非执行需要独占锁的操作（如大多数 ALTER TABLE）。
 
 - 恢复转储
 
@@ -3877,19 +3875,10 @@ pg_dump -U postgres -s mydb > mydb_schema.sql
 psql -U username -d dbname -f db_backup.sql
 ```
 
-示例：
+> 注意：导入时，数据库 `mydb` 必须已经存在，如果不存在，需要先创建：`CREATE DATABASE mydb;`
 
-```bash
-psql -U postgres -d mydb -f mydb.sql
-```
 
-注意：导入时，数据库 `mydb` 必须已经存在，如果不存在，需要先创建：
-
-```sql
-CREATE DATABASE mydb;
-```
-
-示例：自定义格式导出并恢复
+- 自定义格式导出并恢复
 
 ```bash
 pg_dump -U postgres -Fc mydb > mydb.dump
@@ -3901,7 +3890,7 @@ pg_restore -U postgres -d mydb mydb.dump
 * `pg_dump` 只能导出单个数据库
 * `pg_dumpall` 可以导出整个 PostgreSQL 实例下的所有数据库，以及全局对象（如角色、权限、表空间等）
 
-导出整个 PostgreSQL 实例到 SQL 文件
+- 导出整个 PostgreSQL 实例到 SQL 文件
 
 ```bash
 pg_dumpall -U postgres > full_backup.sql
@@ -3913,7 +3902,7 @@ pg_dumpall -U postgres > full_backup.sql
 
 > 注意：生成的是文本 SQL 文件，导入时可以直接用 `psql` 恢复。
 
-仅导出角色和全局对象
+- 仅导出角色和全局对象
 
 ```bash
 pg_dumpall -g -U postgres > globals.sql
@@ -3922,7 +3911,7 @@ pg_dumpall -g -U postgres > globals.sql
 * `-g` 或 `--globals-only`：只导出角色、权限、表空间等全局对象，不导出数据库数据
 * 适合先备份用户权限，再单独用 `pg_dump` 备份每个数据库
 
-导入全量 SQL 文件
+- 导入全量 SQL 文件
 
 ```bash
 psql -U postgres -f full_backup.sql
