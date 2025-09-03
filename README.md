@@ -216,10 +216,12 @@ mydb=#
 ## 语法规则
 
 ### 注释
+
 - 单行注释
 ```sql
--- --是单行注释
+-- 是单行注释
 ```
+
 - 文档注释
 ```sql
 /*
@@ -228,11 +230,6 @@ mydb=#
 ```
 
 ### 类型转换
-你提供的 PostgreSQL 类型转换说明可以优化成更自然、流畅、易理解的表述如下：
-
----
-
-## PostgreSQL 类型转换
 
 在 PostgreSQL 中，可以将表达式从一种数据类型转换为另一种数据类型。PostgreSQL 支持两种等效的语法：
 
@@ -241,10 +238,8 @@ CAST(expression AS type)
 expression::type
 ```
 
-* `CAST(expression AS type)` 是标准 SQL 语法。
-* `expression::type` 是 PostgreSQL 历史性的简写语法。
-
----
+* `CAST(expression AS type)` 是标准 SQL 语法
+* `expression::type` 是 PostgreSQL 历史性的简写语法
 
 ### 强制转换的作用
 
