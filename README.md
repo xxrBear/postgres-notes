@@ -16,6 +16,7 @@
 | [安装](#安装)                 | [显示锁定](#显示锁定)     | [命令行工具](#命令行工具)       |            |
 | [语法规则](#语法规则)         | [触发器](#触发器)         | [系统信息函数](#系统信息函数)   |            |
 | [表格](#表格)                 |
+| [数据操作](#数据操作)         |
 | [查询语句风格](#查询语句风格) | [存储过程](#存储过程)     | [查看运行参数](#查看运行参数)   |            |
 | [常用数据类型](#常用数据类型) | [模式管理](#模式管理)     | [修改运行参数](#自定义运行参数) |            |
 | [字段约束](#字段约束)         | [表分区](#表分区)         | [数据库管理](#数据库管理)       |            |
@@ -512,6 +513,60 @@ SELECT * FROM ONLY parent;
 
 [返回目录](#目录)
 
+## 数据操作
+
+### 插入数据
+
+一个插入语句如下：
+```sql
+INSERT INTO products VALUES (1, 'Cheese', 9.99);
+```
+上面的语法有一个缺点，你需要知道表中列的顺序。为了避免这种情况，你也可以显式地列出列。例如，以下两个命令与上面的命令具有相同的效果
+
+```sql
+INSERT INTO products (product_no, name, price) VALUES (1, 'Cheese', 9.99);
+INSERT INTO products (name, price, product_no) VALUES ('Cheese', 9.99, 1);
+```
+
+### 更新数据
+对数据库中已存在的数据进行修改称为更新。您可以更新单独的行、表中所有的行或者所有行的子集。每一列可以单独更新；其他列不受影响。
+
+```sql
+UPDATE products SET price = 10 WHERE price = 5;
+```
+
+### 删除数据
+```sql
+DELETE FROM products WHERE price = 10;
+```
+
+### 从修改的行返回数据
+有时，在修改行时获取修改后的行的数据会很有用。INSERT、UPDATE、DELETE 和 MERGE 命令都有一个可选的 RETURNING 子句来支持这一点。使用 RETURNING 可以避免执行额外的数据库查询来收集数据，并且在其他情况下难以可靠地识别修改的行时尤其有价值。
+
+- 在`insert`语句中
+```sql
+CREATE TABLE users (firstname text, lastname text, id serial primary key);
+
+INSERT INTO users (firstname, lastname) VALUES ('Joe', 'Cool') RETURNING id;
+```
+
+- 在`update`语句中
+```sql
+UPDATE products SET price = price * 1.10
+  WHERE price <= 99.99
+  RETURNING name, price AS new_price;
+```
+
+- 在`delete`语句中
+```sql
+DELETE FROM products
+  WHERE obsoletion_date = 'today'
+  RETURNING *;
+```
+
+[返回目录](#目录)
+
+
 ## 查询语句风格
   
 **关键字大写，字段和表名小写**
@@ -594,6 +649,7 @@ FROM orders o
 JOIN customers c ON o.customer_id = c.id
 WHERE o.status = 'completed';
 ```
+
 [返回目录](#目录)
 
 
