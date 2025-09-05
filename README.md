@@ -5169,11 +5169,9 @@ Postgres 会自动复制已有数据（除非指定 `WITH (copy_data = false)`�
 
 [返回目录](#目录)
 
-## PL/pgSQL过程语言
+## PL-pgSQL过程语言
 
 ### 基础概念
-
-* **PL-pgSQL 是什么**
 
 PostgreSQL 内置的过程语言，允许在 SQL 中使用控制语句（循环、条件、变量、异常处理）
 
