@@ -719,7 +719,7 @@ SELECT name FROM suppliers;
 
 **INTERSECT**
 
-### 用途：取两个结果的交集（共同部分）。
+用途：取两个结果的交集（共同部分）
 
 ```sql
 SELECT name FROM customers
@@ -729,7 +729,7 @@ SELECT name FROM suppliers;
 
 结果是 **既是客户又是供应商的名字**
 
-### 保留重复行：
+- 保留重复行：
 
 ```sql
 SELECT name FROM customers
