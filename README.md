@@ -601,7 +601,7 @@ GROUP BY GROUPING SETS (
 );
 ```
 
-👉 相当于写了 4 个查询并 `UNION ALL`，Postgres 会帮你合并。
+相当于写了 4 个查询并 `UNION ALL`，Postgres 会帮你合并
 
 结果会长这样：
 
@@ -897,9 +897,9 @@ JOIN big_orders b ON u.id = b.user_id;
 
 **递归 CTE**
 
-递归 CTE 用于层级/树状结构查询，比如员工上下级、目录树。
+递归 CTE 用于层级/树状结构查询，比如员工上下级、目录树
 
-### 例子：组织架构
+例子：组织架构
 
 ```sql
 WITH RECURSIVE subordinates AS (
@@ -955,8 +955,8 @@ JOIN order_totals o ON u.id = o.user_id;
 
 **CTE 的执行特性**
 
-* **PostgreSQL 12 以前**：CTE 是“优化屏障”，会物化（materialize），即先执行完再给主查询用 → 有时会拖慢性能。
-* **PostgreSQL 12 及以后**：非递归 CTE 默认会 inline（内联优化），除非用 `MATERIALIZED` 强制物化。
+* PostgreSQL 12 以前：CTE 是 优化屏障，会物化，即先执行完再给主查询用，有时会拖慢性能
+* PostgreSQL 12 及以后：非递归 CTE 默认会 inline（内联优化），除非用 `MATERIALIZED` 强制物化
 
 ```sql
 WITH cte AS MATERIALIZED (
@@ -974,6 +974,7 @@ SELECT * FROM cte WHERE id < 10;
 
 > 公用表表达式（CTE）= 临时视图（可递归），让 SQL 更清晰，适合分步骤写复杂逻辑
 
+[返回目录](#目录)
 
 ## 查询语句风格
   
