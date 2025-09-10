@@ -455,22 +455,22 @@ SELECT xmin, id, name FROM users;
 在 **PostgreSQL** 里，修改表主要通过 `ALTER TABLE` 来实现。它能做的事情很多，从增加/删除列到修改约束、索引，甚至表名都可以改。
 
 
-| 操作                            | 语法示例                                                                                                        |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| 修改表名                        | `ALTER TABLE old_name RENAME TO new_name;`                                                                      |
-| 修改列名                        | `ALTER TABLE users RENAME COLUMN username TO name;`                                                             |
-| 添加列                          | `ALTER TABLE users ADD COLUMN age INT;`                                                                         |
-| 删除列                          | `ALTER TABLE users DROP COLUMN age;`                                                                            |
-| 修改列数据类型                  | `ALTER TABLE users ALTER COLUMN age TYPE BIGINT;`                                                               |
-| 设置默认值                      | `ALTER TABLE users ALTER COLUMN status SET DEFAULT 'active';`                                                   |
-| 删除默认值                      | `ALTER TABLE users ALTER COLUMN status DROP DEFAULT;`                                                           |
-| 设置/删除非空约束               | `ALTER TABLE users ALTER COLUMN email SET NOT NULL;` <br> `ALTER TABLE users ALTER COLUMN email DROP NOT NULL;` |
-| 添加主键                        | `ALTER TABLE users ADD PRIMARY KEY (id);`                                                                       |
-| 添加唯一约束                    | `ALTER TABLE users ADD CONSTRAINT uniq_email UNIQUE (email);`                                                   |
-| 添加外键                        | `ALTER TABLE orders ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id);`                         |
-| 删除约束                        | `ALTER TABLE users DROP CONSTRAINT uniq_email;`                                                                 |
-| 添加索引（推荐 `CREATE INDEX`） | `CREATE INDEX idx_email ON users(email);`                                                                       |
-| 修改表所有者                    | `ALTER TABLE users OWNER TO new_owner;`                                                                         |
+| 操作              | 语法示例                                                                                                        |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| 修改表名          | `ALTER TABLE old_name RENAME TO new_name;`                                                                      |
+| 修改列名          | `ALTER TABLE users RENAME COLUMN username TO name;`                                                             |
+| 添加列            | `ALTER TABLE users ADD COLUMN age INT;`                                                                         |
+| 删除列            | `ALTER TABLE users DROP COLUMN age;`                                                                            |
+| 修改列数据类型    | `ALTER TABLE users ALTER COLUMN age TYPE BIGINT;`                                                               |
+| 设置默认值        | `ALTER TABLE users ALTER COLUMN status SET DEFAULT 'active';`                                                   |
+| 删除默认值        | `ALTER TABLE users ALTER COLUMN status DROP DEFAULT;`                                                           |
+| 设置/删除非空约束 | `ALTER TABLE users ALTER COLUMN email SET NOT NULL;` <br> `ALTER TABLE users ALTER COLUMN email DROP NOT NULL;` |
+| 添加主键          | `ALTER TABLE users ADD PRIMARY KEY (id);`                                                                       |
+| 添加唯一约束      | `ALTER TABLE users ADD CONSTRAINT uniq_email UNIQUE (email);`                                                   |
+| 添加外键          | `ALTER TABLE orders ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id);`                         |
+| 删除约束          | `ALTER TABLE users DROP CONSTRAINT uniq_email;`                                                                 |
+| 添加索引          | `CREATE INDEX idx_email ON users(email);`                                                                       |
+| 修改表所有者      | `ALTER TABLE users OWNER TO new_owner;`                                                                         |
 
 ### 表继承
 
@@ -662,7 +662,7 @@ GROUP BY GROUPING SETS (
 例如 `(region, product, year)` → 会有 8 种分组
 
 
-**GROUPING() 函数**
+**GROUPING 函数**
 
 因为小计/总计会把字段填成 `NULL`，有时候你要区分：
 
@@ -691,8 +691,8 @@ GROUP BY CUBE(region, product);
 
 **基本规则**
 
-* 参与的 `SELECT` 必须有 **相同的列数**，且每一列的数据类型必须可以相互兼容
-* 默认会自动去重（返回 **集合**）
+* 参与的 `SELECT` 必须有相同的列数，且每一列的数据类型必须可以相互兼容
+* 默认会自动去重（返回集合）
 * 如果你要保留重复行，用 `ALL` 关键字
 
 **UNION**
@@ -727,7 +727,7 @@ INTERSECT
 SELECT name FROM suppliers;
 ```
 
-结果是 **既是客户又是供应商的名字**
+结果是既是客户又是供应商的名字
 
 - 保留重复行：
 
@@ -761,7 +761,7 @@ SELECT name FROM suppliers;
 
 ### VALUES 列表
 
-在 **PostgreSQL** 里，`VALUES` 列表是一种 **表表达式**，用来直接在 SQL 中构造一张临时表。它可以出现在 `SELECT`、`INSERT` 或 `FROM` 子句中。
+在 **PostgreSQL** 里，`VALUES` 列表是一种表表达式，用来直接在 SQL 中构造一张临时表。它可以出现在 `SELECT`、`INSERT` 或 `FROM` 子句中。
 
 **基本语法**
 
@@ -967,10 +967,10 @@ SELECT * FROM cte WHERE id < 10;
 
 **使用场景**
 
-* **简化复杂 SQL**：分步骤写
-* **避免重复子查询**：一个 CTE 定义，多次用
-* **递归查询**：树/图遍历
-* **调试 SQL**：逐步验证逻辑
+* 简化复杂 SQL：分步骤写
+* 避免重复子查询：一个 CTE 定义，多次用
+* 递归查询：树/图遍历
+* 调试 SQL：逐步验证逻辑
 
 > 公用表表达式（CTE）= 临时视图（可递归），让 SQL 更清晰，适合分步骤写复杂逻辑
 
@@ -2957,7 +2957,7 @@ SET AUTOCOMMIT TO OFF;
 
 ## 触发器
 
-`postgres`的触发器`Trigger`是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数（触发器函数）。它常用于 数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景
+PostgreSQL 的触发器 `Trigger` 是一类特殊的数据库对象，在表的 INSERT、UPDATE 或 DELETE 事件发生时，自动执行预定义的函数。它常用于数据完整性约束、审计日志、自动计算、复杂的业务逻辑处理等场景。
 
 ### 触发器的构成
 
@@ -2968,20 +2968,20 @@ SET AUTOCOMMIT TO OFF;
 
 ### 触发器的类型
 
-按照触发时间分类
+**按照触发时间分类**
 
 + BEFORE 触发器（在事件发生前执行）
 + AFTER 触发器（在事件发生后执行）
 + INSTEAD OF 触发器（替代事件执行，仅适用于视图）
 
-按照触发事件分类
+**按照触发事件分类**
 
 + INSERT 触发器（在插入新数据时触发）
 + UPDATE 触发器（在数据更新时触发）
 + DELETE 触发器（在数据删除时触发）
 + TRUNCATE 触发器（在 `TRUNCATE` 操作时触发）
 
-按照触发级别分类
+**按照触发级别分类**
 
 + 行级触发器：对受影响的每一行数据触发一次
 + 语句级触发器：对整个 SQL 语句仅触发一次
@@ -2997,7 +2997,7 @@ postgres 触发器的创建需要两步：
 
 **示例 1：审计日志**
 
-Step 1: 创建审计日志表
+- Step 1: 创建审计日志表
 
 ```sql
 CREATE TABLE user_logs (
@@ -3008,7 +3008,7 @@ CREATE TABLE user_logs (
 );
 ```
 
-Step 2: 编写触发器函数
+- Step 2: 编写触发器函数
 
 ```sql
 CREATE OR REPLACE FUNCTION log_user_insert() RETURNS TRIGGER AS $$
@@ -3020,7 +3020,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-Step 3: 创建触发器
+- Step 3: 创建触发器
 
 ```sql
 CREATE TRIGGER user_insert_trigger
@@ -3033,13 +3033,13 @@ EXECUTE FUNCTION log_user_insert();
 
 假设 `users` 表中有一个 `updated_at` 字段，我们希望在用户数据更新时，自动更新 `updated_at` 时间戳
 
-Step 1: 在 `users` 表添加 `updated_at` 字段
+- Step 1: 在 `users` 表添加 `updated_at` 字段
 
 ```sql
 ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ```
 
-Step 2: 创建触发器函数
+- Step 2: 创建触发器函数
 
 ```sql
 CREATE OR REPLACE FUNCTION update_timestamp() RETURNS TRIGGER AS $$
@@ -3050,7 +3050,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-Step 3: 创建触发器
+- Step 3: 创建触发器
 
 ```sql
 CREATE TRIGGER update_users_timestamp
@@ -3063,7 +3063,7 @@ EXECUTE FUNCTION update_timestamp();
 
 有时我们不希望某些重要数据被删除，可以通过`BEFORE DELETE`触发器阻止删除
 
-Step 1: 创建触发器函数
+- Step 1: 创建触发器函数
 
 ```sql
 CREATE OR REPLACE FUNCTION prevent_delete() RETURNS TRIGGER AS $$
@@ -3073,7 +3073,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-Step 2: 绑定到 **users** 表
+- Step 2: 绑定到 users 表
 
 ```sql
 CREATE TRIGGER prevent_users_deletion
@@ -3084,7 +3084,8 @@ EXECUTE FUNCTION prevent_delete();
 
 ### 触发器的管理
 
-查看已有触发器
+- 查看已有触发器
+
 ```sql
 SELECT tgname, relname, tgtype, proname 
 FROM pg_trigger 
@@ -3093,12 +3094,14 @@ JOIN pg_proc ON pg_trigger.tgfoid = pg_proc.oid
 WHERE NOT tgisinternal;
 ```
 
-删除触发器
+- 删除触发器
+
 ```sql
 DROP TRIGGER IF EXISTS user_insert_trigger ON users;
 ```
 
-删除触发器函数
+- 删除触发器函数
+
 ```sql
 DROP FUNCTION IF EXISTS log_user_insert();
 ```
@@ -3419,19 +3422,18 @@ GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA sales TO analyst;
 
 ## 角色管理
 
-`postgres` 的用户与权限管理是数据库安全的重要组成部分，理解其机制可以有效控制访问权限、防止数据泄露与误操作
+PostgreSQL 的用户与权限管理是数据库安全的重要组成部分，理解其机制可以有效控制访问权限、防止数据泄露与误操作
 
-`postgres` 中用户和组统一称为角色：
+PostgreSQL 中用户和组统一称为角色：
 
 + 用户：能登录系统的角色，带 `LOGIN` 属性
 + 组（Group）：不能登录，用来授权多个用户（不带 `LOGIN`）
 
 > 一个 Role 可以既是用户又是组，只取决于是否有 `LOGIN` 权限
->
 
 ### 用户管理相关命令
 
-postgres 提供了程序 createuser 和 dropuser 作为这些 SQL 命令的包装器，可以从 shell 命令行调用
+PostgreSQL 提供了程序 createuser 和 dropuser 作为这些 SQL 命令的包装器，可以从 shell 命令行调用
 
 - 创建角色
 ```sql
@@ -3566,7 +3568,6 @@ host    all             all             0.0.0.0/0               md5
 + `scram-sha-256`：更安全的加密
 + `peer`：操作系统用户认证
 
-
 [返回目录](#目录)
 
 ## 行安全策略
@@ -3591,7 +3592,7 @@ host    all             all             0.0.0.0/0               md5
 
 当多个策略应用于给定的查询时，它们会使用 OR（对于允许性策略，这是默认设置）或使用 AND（对于限制性策略）进行组合。这类似于给定角色具有其成员的所有角色的权限的规则。允许性策略和限制性策略将在下面进一步讨论
 
-### 第一个行安全策略
+### 启动行安全策略
 对数据表启动行安全策略很简单，只需要先启用行安全策略，然后对这个表创建一个对应的策略便可以了。
 
 ```sql
@@ -3743,7 +3744,7 @@ UPDATE 1
 
 认证是数据库服务器建立客户端身份的过程，并由此确定是否允许客户端应用程序（或运行客户端应用程序的用户）以所请求的数据库用户名进行连接。
 
-postgres 提供了多种不同的客户端认证方法。用于认证特定客户端连接的方法可以根据（客户端）主机地址、数据库和用户进行选择。
+PostgreSQL 提供了多种不同的客户端认证方法。用于认证特定客户端连接的方法可以根据（客户端）主机地址、数据库和用户进行选择。
 
 **配置文件**
 
