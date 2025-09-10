@@ -27,6 +27,7 @@
 | [视图](#视图)                 |                           |                                 |
 | [连接语句](#连接语句)         |                           |                                 |                                  |
 | [权限管理](#权限管理)         |                           |                                 |                                  |
+| [全文搜索](#全文搜索)         |                           |                                 |                                  |
 
 ## 简介
 
@@ -2703,6 +2704,327 @@ REVOKE ALL ON accounts FROM PUBLIC;
 
 [返回目录](#目录)
 
+## 全文搜索
+
+### 概念与背景
++ 全文搜索：支持在大文本字段中高效地查找单词或短语，并支持词形还原、语言感知和排序
++ 适用场景：
+    - 新闻、博客、论坛等内容检索
+    - 商品描述
+    - 知识库、文档搜索
++ PostgreSQL 内置 FTS，无需外部插件
+
+### 核心对象与术语
+
+**文本搜索数据类型**
+
++ `tsvector`：文本的标准化形式，包含词条（lexeme）及其位置（位置信息）
+
+```sql
+SELECT to_tsvector('english', 'The quick brown fox jumped over the lazy dog');
+-- 'brown':3 'dog':9 'fox':4 'jump':5 'lazi':8 'quick':2
+```
+
++ `tsquery`：查询表达式，用来匹配 `tsvector`
+
+```sql
+SELECT to_tsquery('english', 'quick & fox');
+-- 'quick' & 'fox'
+```
+
++ 逻辑运算：`&` (AND), `|` (OR), `!` (NOT)
++ 短语搜索：`<->` (紧邻), `<N>` (相隔 N 个词)
+
+**词典**
+
++ 用于规范化词汇
++ 常见内置词典：
+    - `simple`：直接按分隔符拆分，不做词形还原
+    - `english`：支持英语词干提取
+    - `snowball`：多语言词干提取
+    - `ispell`：词典+拼写检查
+    - `synonym`：同义词映射
++ 可以自定义词典
+
+### 配置
++ 配置 = 分词器+ 词典
++ 每种语言有默认配置（如 `english`, `simple`, `chinese_t`）
++ 查看：
+
+```sql
+\dF      -- 查看所有配置
+\dFd     -- 查看词典
+\dFp     -- 查看分词器
+```
+
+### 基本操作
+**建立向量**
+
++ `to_tsvector(config, text)`
++ 自动转小写、去停用词、词干提取
+
+```sql
+SELECT to_tsvector('english', 'PostgreSQL is a powerful, open source object-relational database system');
+```
+
+**构造查询**
+
++ `to_tsquery(config, querytext)`
++ `plainto_tsquery(config, text)`：自动将输入转成 AND 组合
++ `phraseto_tsquery(config, text)`：短语搜索
++ `websearch_to_tsquery(config, text)`：支持 Google 风格搜索 (`"word1 word2" -word3 OR word4`)
+
+**匹配**
+
++ 运算符：`@@`
+
+```sql
+SELECT 'fat cats ate rats'::tsvector @@ 'cat & rat'::tsquery;
+-- true
+```
+
+**排序与排名**
+
++ `ts_rank` / `ts_rank_cd`：计算匹配度
+    - 支持权重 A (标题) > B (摘要) > C (正文) > D (评论)
++ 例子：
+
+```sql
+SELECT ts_rank_cd(to_tsvector('english', body), to_tsquery('english', 'postgres')) AS rank
+FROM articles
+ORDER BY rank DESC;
+```
+
+**高亮**
+
++ `ts_headline(config, text, query, options)`：返回高亮片段
+
+```sql
+SELECT ts_headline('english', 'The quick brown fox', to_tsquery('fox'));
+-- The quick brown <b>fox</b>
+```
+
+### 索引优化
+
+**GIN 索引**
+
++ 适合全文搜索，支持大多数场景
+
+```sql
+CREATE INDEX idx_post_body ON posts USING GIN (to_tsvector('english', body));
+```
+
+**GiST 索引**
+
++ 更灵活，但性能通常不如 GIN
++ 用于 `@@`、`@>` 等操作
+
+**Expression Index**
+
++ 必须和查询的 `to_tsvector` 保持一致
+
+```sql
+CREATE INDEX idx_articles_body ON articles
+USING GIN (to_tsvector('english', body));
+```
+
+### 进阶功能
+
+**多字段搜索**
+
++ 将多个字段合并为一个向量，并设置权重。
+
+```sql
+to_tsvector('english', coalesce(title,''))    * 'A' ||
+to_tsvector('english', coalesce(summary,''))  * 'B' ||
+to_tsvector('english', coalesce(content,''))  * 'C'
+```
+
+**权重排序**
+
++ 权重范围：`A`（最高）、`B`、`C`、`D`
++ 常用于提升标题命中结果
+
+**同义词扩展**
+
++ 定义 `synonym` 词典：
+
+```plain
+postgres pgsql postgresql
+cat kitty feline
+```
+
++ 配置到搜索配置中，实现“同义词搜索”
+
+### 实践技巧
+**搜索建议**
+
++ 可以结合 trigram (`pg_trgm` 扩展) 实现“模糊匹配 + 全文搜索”
+
+```sql
+CREATE EXTENSION pg_trgm;
+SELECT word FROM dictionary ORDER BY word <-> 'postg' LIMIT 5;
+```
+
+**增量索引更新**
+
++ FTS 索引不会自动更新 `to_tsvector` 结果，需触发器：
+
+```sql
+CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE
+ON documents FOR EACH ROW EXECUTE FUNCTION
+tsvector_update_trigger(tsv, 'pg_catalog.english', title, body);
+```
+
+**结合 JSONB**
+
++ 对 JSONB 字段也可全文搜索：
+
+```sql
+CREATE INDEX idx_doc_jsonb_gin ON docs USING GIN (to_tsvector('english', doc->>'content'));
+```
+
+### 常见问题与坑
+配置不一致：索引和查询的 `config` 必须一致
+
+大小写：`tsvector` 会自动小写化
+
+停用词：可能导致部分词查不到（如 "is", "the"）
+
+性能优化：
+
++ 小数据量时，`seq scan + ranking` 可能比索引快
++ 大量插入时，可以暂时禁用索引，批量导入后再创建索引
+
+### 内部实现原理
+
+tsvector 存储结构
+
++ 以词典化的 lexeme 存储，每个词条记录出现位置
++ 内部会保存 `(term, positions[])` 的倒排信息
++ 比普通 `LIKE '%xxx%'` 高效得多
+
+tsquery 优化
+
++ 逻辑运算符会被优化为布尔表达式树
++ 查询时走倒排索引，避免全表扫描
+
+GIN/GiST 索引原理
+
++ GIN：倒排索引（lexeme → 文档 ID 列表），适合查“词包含”
++ GiST：平衡树，适合范围查询和复杂算子，灵活性高但性能偏弱
++ RUM（扩展）：在 GIN 基础上，支持 排序优化（比如 rank + tsquery 一次完成）
+
+### 查询扩展语法
+tsquery 操作符
+
++ `&`, `|`, `!`
++ `<->` (紧邻), `<N>` (间隔 N 个词)
++ `:*` (前缀搜索)
+
+```sql
+SELECT to_tsquery('postgres:*');  -- 匹配 postgres, postgresql
+```
+
+phraseto_tsquery 与 <-> 的区别
+
++ `phraseto_tsquery('cat ate rat')` 等价于 `'cat' <-> 'ate' <-> 'rat'`
++ 更自然，支持 Google 风格短语搜索。
+
+websearch_to_tsquery
+
++ 模拟 Google 搜索语法：
+    - `"exact phrase"` 精确短语
+    - `-word` 排除
+    - `word1 OR word2` 并列
+
+### 性能优化技巧
+并行查询
+
++ `tsvector` 搜索支持 PostgreSQL 的并行执行计划，在大表中能显著提速
++ 确保 `parallel_setup_cost` / `parallel_tuple_cost` 合理
+
+索引合并
+
++ 多字段搜索时，可以把多个 `to_tsvector` 拼接在一起，避免多索引扫描
++ 或者对每个字段分别建索引，依赖 bitmap index scan
+
+部分索引
+
++ 只给需要的行建索引：
+
+```sql
+CREATE INDEX idx_ft_active ON docs
+USING GIN (to_tsvector('english', content))
+WHERE is_active = true;
+```
+
+统计信息优化
+
++ `ANALYZE` 更新词频统计，有助于优化器选择合适的执行计划
++ 可调参数：
+    - `default_statistics_target`
+    - `pg_statistic`
+
+### 权重与排序
+权重（A/B/C/D）
+
++ 用于不同字段的优先级
++ 常见：标题 `A`，摘要 `B`，正文 `C`
+
+ts_rank vs ts_rank_cd
+
++ `ts_rank`：相关度计算，考虑词频、文档长度
++ `ts_rank_cd`：降低重复词的权重，避免关键词堆砌
+
+自定义排序函数
+
++ 可以用 `log`, `sqrt` 等函数包裹 rank，让结果更自然
++ 甚至可以结合业务维度（点击率、发布时间）加权
+
+### 和其他功能的结合
+全文搜索 + JSONB
+
++ JSONB 提取字段 + FTS：
+
+```sql
+to_tsvector('english', doc->>'body')
+```
+
++ 适合做半结构化文档搜索
+
+全文搜索 + trigram (pg_trgm)
+
++ 先用 trigram 做模糊匹配，再用 FTS 排序
++ 适合拼写错误的查询
+
+全文搜索 + 外部搜索引擎
+
++ PostgreSQL FTS 可作为轻量搜索方案
++ 数据量很大时（千万级+），可以和 Elasticsearch、OpenSearch 结合，Postgres 只做主存储
+
+### 开发实践经验
+高亮摘要优化
+
++ `ts_headline` 生成结果可能过长，可以设置 `MaxWords`、`MinWords`、`ShortWord`、`FragmentDelimiter`
+
+搜索建议 / 自动补全
+
++ `pg_trgm` 提供近似搜索
++ `rum` 索引支持“前缀搜索”更快
+
+冷热数据分离
+
++ 热数据表加 GIN 索引
++ 冷数据只做顺序扫描（降低索引存储压力）
+
+触发器维护 tsvector
+
++ `tsvector_update_trigger` 适合简单场景
++ 复杂场景（多语言、多字段）建议手写触发器
+
+[返回目录](#目录)
+
 ## 事务处理
 
 `postgres`事务处理是指在数据库中执行一系列 SQL 语句，使其成为一个不可分割的操作单元，即 要么全部执行成功，要么全部回滚，以确保数据的一致性和完整性
@@ -3938,7 +4260,7 @@ SELECT email FROM users WHERE name = 'Alice';
 
 要确定你的查询语句是否是仅索引扫描或覆盖索引，可以使用`explain analyze` 语句查看执行计划。
 
-```
+```sql
 EXPLAIN ANALYZE
 SELECT col1 FROM my_table WHERE col2 = 'foo';
 ```
