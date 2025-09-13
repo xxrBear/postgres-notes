@@ -580,8 +580,6 @@ DELETE FROM products
 
 在 PostgreSQL 里，`GROUPING SETS`、`CUBE` 和 `ROLLUP` 都是高级分组的工具，用来一次性生成多种 `GROUP BY` 结果，避免写一堆 `UNION ALL`
 
-我给你分层次讲：
-
 **普通 GROUP BY 回顾**
 
 ```sql
@@ -591,7 +589,6 @@ GROUP BY region, product;
 ```
 
 如果你想要额外的结果，比如仅按 region 聚合，还得写额外 SQL（或者 `UNION ALL`）
-
 
 **GROUPING SETS**
 
@@ -623,7 +620,7 @@ GROUP BY GROUPING SETS (
 
 **ROLLUP**
 
-`ROLLUP` = **逐级向上汇总**，常用于分层小计 → 总计
+`ROLLUP` = 逐级向上汇总，常用于分层小计 → 总计
 
 ```sql
 SELECT region, product, SUM(sales)
@@ -641,8 +638,7 @@ GROUP BY GROUPING SETS (
 );
 ```
 
-特点：它会自动按参数顺序“逐层聚合”
-
+特点：它会自动按参数顺序逐层聚合
 
 **CUBE**
 
@@ -668,7 +664,6 @@ GROUP BY GROUPING SETS (
 如果你有 N 个维度，`CUBE` 会生成 2^N 个分组结果
 例如 `(region, product, year)` → 会有 8 种分组
 
-
 **GROUPING 函数**
 
 因为小计/总计会把字段填成 `NULL`，有时候你要区分：
@@ -693,8 +688,7 @@ GROUP BY CUBE(region, product);
 
 ### 组合查询
 
-在 **PostgreSQL** 里用 `UNION`、`INTERSECT`、`EXCEPT` 来把多个 `SELECT` 的结果集合并在一起。它们和集合运算类似
-
+在 PostgreSQL 里用 `UNION`、`INTERSECT`、`EXCEPT` 来把多个 `SELECT` 的结果集合并在一起。它们和集合运算类似
 
 **基本规则**
 
@@ -768,7 +762,7 @@ SELECT name FROM suppliers;
 
 ### VALUES 列表
 
-在 **PostgreSQL** 里，`VALUES` 列表是一种表表达式，用来直接在 SQL 中构造一张临时表。它可以出现在 `SELECT`、`INSERT` 或 `FROM` 子句中。
+在 PostgreSQL 里，`VALUES` 列表是一种表表达式，用来直接在 SQL 中构造一张临时表。它可以出现在 `SELECT`、`INSERT` 或 `FROM` 子句中。
 
 **基本语法**
 
@@ -832,8 +826,7 @@ JOIN (VALUES (1, 90), (2, 80), (3, 70)) AS v(id, score)
   ON u.id = v.id;
 ```
 
-这里 `VALUES` 列表相当于一张临时表，可以参与 `JOIN`。
-
+这里 `VALUES` 列表相当于一张临时表，可以参与 `JOIN`
 
 **VALUES + UNION / INTERSECT**
 
@@ -849,25 +842,26 @@ SELECT * FROM (VALUES (2), (3), (4)) AS t(x);
 
 * 只取一行常量
 
-  ```sql
-  SELECT * FROM (VALUES (now())) AS t(current_time);
-  ```
+```sql
+SELECT * FROM (VALUES (now())) AS t(current_time);
+```
+
 * 作为 CASE WHEN 的替代写法
 
-  ```sql
-  SELECT *
-  FROM (VALUES ('A', 'Apple'),
-               ('B', 'Banana'),
-               ('C', 'Cherry')) AS t(code, fruit)
-  WHERE code = 'B';
-  ```
+```sql
+SELECT *
+FROM (VALUES ('A', 'Apple'),
+              ('B', 'Banana'),
+              ('C', 'Cherry')) AS t(code, fruit)
+WHERE code = 'B';
+```
 
 ### 公共表表达式
 
 公用表表达式（**CTE, Common Table Expression**）是 PostgreSQL 里非常重要的查询结构，主要用 `WITH` 语法来定义。它的核心作用是：
 
 * 给复杂查询拆分逻辑，提高可读性
-* 类似“临时视图”，可以被后续查询多次引用
+* 类似临时视图，可以被后续查询多次引用
 * 可以递归，写层级结构查询（树/图）
 
 **基本语法**
@@ -880,7 +874,7 @@ SELECT *
 FROM cte_name;
 ```
 
-`cte_name` 就像一个临时表，作用域仅限于这条 SQL。
+`cte_name` 就像一个临时表，作用域仅限于这条 SQL
 
 **多个 CTE**
 
@@ -899,7 +893,7 @@ FROM active_users u
 JOIN big_orders b ON u.id = b.user_id;
 ```
 
-`active_users` 和 `big_orders` 都是临时表，可以在主查询里自由组合。
+`active_users` 和 `big_orders` 都是临时表，可以在主查询里自由组合
 
 
 **递归 CTE**
@@ -925,7 +919,7 @@ WITH RECURSIVE subordinates AS (
 SELECT * FROM subordinates;
 ```
 
-这个查询会找出 `id = 1` 的员工及其所有下属（无限层级）。
+这个查询会找出 `id = 1` 的员工及其所有下属（无限层级）
 
 
 **CTE vs 子查询**
@@ -979,7 +973,7 @@ SELECT * FROM cte WHERE id < 10;
 * 递归查询：树/图遍历
 * 调试 SQL：逐步验证逻辑
 
-> 公用表表达式（CTE）= 临时视图（可递归），让 SQL 更清晰，适合分步骤写复杂逻辑
+> 公用表表达式（CTE）= 临时视图，让 SQL 更清晰，适合分步骤写复杂逻辑
 
 [返回目录](#目录)
 
@@ -1002,7 +996,6 @@ WHERE created_at >= '2024-01-01'
   AND status = 'active'
 ORDER BY created_at DESC;
 ```
-
 
 **缩进对齐**
 
@@ -1154,7 +1147,6 @@ mydb=# \d -- 显示 mydb 所有表
 | `\watch [秒]`    | 每隔多少秒重复执行前一条查询          |
 | `\conninfo`      | 显示当前连接信息                      |
 
-
 [返回目录](#目录)
 
 
@@ -1232,7 +1224,7 @@ SHOW ALL LIKE '%log%';
 
 ## 自定义运行参数
 
-postgres 安装后的默认配置通常不适合生产环境的高性能需求，默认配置是为了兼容低配置机器，如 512MB 内存容量的机器
+PostgreSQL 安装后的默认配置通常不适合生产环境的高性能需求，默认配置是为了兼容低配置机器，如 512MB 内存容量的机器
 
 推荐使用：[PGTune](https://pgtune.leopard.in.ua/)
 
@@ -1419,7 +1411,9 @@ CREATE TABLE products (
 ```
 
 ### 唯一约束
+
 唯一约束确保列或一组列中包含的数据在表的所有行中都是唯一的。语法是
+
 ```sql
 CREATE TABLE products (
     product_no integer UNIQUE,
@@ -1427,7 +1421,9 @@ CREATE TABLE products (
     price numeric
 );
 ```
+
 可以写成列的形式
+
 ```sql
 CREATE TABLE products (
     product_no integer,
@@ -1436,7 +1432,9 @@ CREATE TABLE products (
     UNIQUE (product_no)
 );
 ```
+
 要为一组列定义唯一约束，请将其写为表约束，列名称用逗号分隔
+
 ```sql
 CREATE TABLE example (
     a integer,
@@ -1445,7 +1443,9 @@ CREATE TABLE example (
     UNIQUE (a, c)
 );
 ```
+
 给约束自定义名称
+
 ```sql
 CREATE TABLE products (
     product_no integer CONSTRAINT must_be_different UNIQUE,
@@ -1455,7 +1455,9 @@ CREATE TABLE products (
 ```
 
 ### 主键
+
 主键约束表示列或一组列可以用作表中行的唯一标识符。这要求值既是唯一的又是非空的
+
 ```sql
 CREATE TABLE products (
     product_no integer PRIMARY KEY,
@@ -1463,6 +1465,7 @@ CREATE TABLE products (
     price numeric
 );
 ```
+
 添加主键会自动在主键中列出的列或列组上创建一个唯一的 B 树索引，并强制将列标记为 NOT NULL
 
 一个表最多只能有一个主键。（可以有任意数量的唯一和非空约束，它们在功能上几乎是相同的，但只能有一个被标识为主键。）关系数据库理论规定每个表都必须有一个主键。 PostgreSQL 不强制执行此规则，但通常最好遵循它
