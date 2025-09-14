@@ -1992,7 +1992,7 @@ WRITE
 | `GREATEST` | 返回多个表达式中最大的一个                  |
 | `LEAST`    | 返回多个表达式中最小的一个                  |
 
-`CASE` 表达式
+- `CASE` 表达式
 
 ```sql
 SELECT
@@ -2006,7 +2006,7 @@ SELECT
 FROM users;
 ```
 
-`COALESCE(expr1, expr2, ..., exprN)`
+- `COALESCE(expr1, expr2, ..., exprN)`
 
 返回第一个非空的值：
 
@@ -2014,7 +2014,7 @@ FROM users;
 SELECT COALESCE(nickname, username, '匿名') AS display_name FROM users;
 ```
 
-`NULLIF(expr1, expr2)`
+- `NULLIF(expr1, expr2)`
 
 若两个值相等，则返回 `NULL`，否则返回 `expr1`：
 
@@ -2028,13 +2028,13 @@ SELECT NULLIF(score, 0) FROM exam_scores;
 SELECT score / NULLIF(total, 0) FROM results;
 ```
 
-`GREATEST(expr1, expr2, ..., exprN)`
+- `GREATEST(expr1, expr2, ..., exprN)`
 
 ```sql
 SELECT GREATEST(price_1, price_2, price_3) AS max_price FROM products;
 ```
 
-`LEAST(expr1, expr2, ..., exprN)`
+- `LEAST(expr1, expr2, ..., exprN)`
 
 ```sql
 SELECT LEAST(price_1, price_2, price_3) AS min_price FROM products;
