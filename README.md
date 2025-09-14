@@ -1752,12 +1752,13 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 | has_database_privilege(dbname, privilege)       | 判断当前用户是否拥有数据库权限 |
 | has_database_privilege(user, dbname, privilege) | 判断指定用户是否拥有数据库权限 |
 
-**可用的 privilege 类型**
-
-- CREATE      -- 创建模式（schema）
-- CONNECT     -- 连接数据库
-- TEMP        -- 创建临时表
-- TEMPORARY   -- TEMP 的别名
+- 可用权限
+```sql
+CREATE      -- 创建模式（schema）
+CONNECT     -- 连接数据库
+TEMP        -- 创建临时表
+TEMPORARY   -- TEMP 的别名
+```
 
 **模式权限函数**
 
@@ -1766,10 +1767,11 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 | has_schema_privilege(schemaname, privilege)       | 判断当前用户是否拥有模式权限 |
 | has_schema_privilege(user, schemaname, privilege) | 判断指定用户是否拥有模式权限 |
 
-**可用的 privilege 类型**
-
-- CREATE  -- 创建对象
-- USAGE   -- 使用 schema 中的对象
+- 可用权限
+```sql
+CREATE  -- 创建对象
+USAGE   -- 使用 schema 中的对象
+```
 
 **表/视图/序列权限函数**
 
@@ -1778,15 +1780,16 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 | `has_table_privilege(relname, privilege)`       | 判断当前用户是否拥有表权限 |
 | `has_table_privilege(user, relname, privilege)` | 判断指定用户是否拥有表权限 |
 
-**可用的 privilege 类型**
-
-- SELECT
-- INSERT
-- UPDATE
-- DELETE
-- TRUNCATE
-- REFERENCES
-- TRIGGER
+- 可用权限
+```sql
+SELECT
+INSERT
+UPDATE
+DELETE
+TRUNCATE
+REFERENCES
+TRIGGER
+```
 
 > 注意：这里的 `relname` 可以是表、视图、物化视图、序列、外部表等
 
@@ -1797,13 +1800,13 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 | `has_column_privilege(relname, column, privilege)`       | 判断当前用户是否有列权限 |
 | `has_column_privilege(user, relname, column, privilege)` | 判断指定用户是否有列权限 |
 
-**可用的 privilege 类型**
-
-- SELECT
-- INSERT
-- UPDATE
-- REFERENCES
-
+- 可用权限
+```sql
+SELECT
+INSERT
+UPDATE
+REFERENCES
+```
 **函数权限函数**
 
 | 函数                                                | 说明                       |
@@ -1811,9 +1814,10 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 | `has_function_privilege(funcname, privilege)`       | 判断当前用户是否有函数权限 |
 | `has_function_privilege(user, funcname, privilege)` | 判断指定用户是否有函数权限 |
 
-**可用的 privilege 类型**：
-
-- EXECUTE
+- 可用权限
+```sql
+EXECUTE
+```
 
 **语言权限函数**
 
@@ -1822,9 +1826,10 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 | `has_language_privilege(langname, privilege)`       | 判断当前用户是否有语言权限 |
 | `has_language_privilege(user, langname, privilege)` | 判断指定用户是否有语言权限 |
 
-**可用的 privilege 类型**
-
-- USAGE
+- 可用权限
+```sql
+USAGE
+```
 
 **大型对象权限函数**
 
@@ -1836,14 +1841,15 @@ SELECT * FROM pg_stat_activity WHERE pid = pg_backend_pid();
 | `has_foreign_table_privilege(user, relname, privilege)`  | 判断指定用户外部表权限 |
 | `has_largeobject_privilege(loid, privilege)`             | 判断大型对象权限       |
 
-**大型对象 privilege 类型**：
-
-- SELECT
-- UPDATE
-- INSERT
-- DELETE
-- READ
-- WRITE
+大型对象可用权限
+```sql
+SELECT
+UPDATE
+INSERT
+DELETE
+READ
+WRITE
+```
 
 [返回目录](#目录)
 
