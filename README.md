@@ -1853,14 +1853,12 @@ USAGE
 | `has_largeobject_privilege(loid, privilege)`             | 判断大型对象权限       |
 
 大型对象可用权限
-```sql
-SELECT
-UPDATE
-INSERT
-DELETE
-READ
-WRITE
-```
+- SELECT
+- UPDATE
+- INSERT
+- DELETE
+- READ
+- WRITE
 
 [返回目录](#目录)
 
