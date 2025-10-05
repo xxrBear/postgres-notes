@@ -326,8 +326,6 @@ PostgreSQL 的运算符主要用在数据计算、查询过滤、字符串/数�
 | `/`     | 除法   | `7 / 2`  | `3.5`                |
 | `%`     | 取余   | `7 % 3`  | `1`                  |
 | `^`     | 乘方   | `2 ^ 3`  | `8`                  |
-| `\|/`   | 平方根 | `/\|2`   | `1.4142135623730951` |
-| `\|\|\` | 立方根 | `\|\|\9` | `3`                  |
 
 **比较运算符**
 
@@ -456,7 +454,7 @@ SELECT xmin, id, name FROM users;
 
 ### 表修改
 
-在 **PostgreSQL** 里，修改表主要通过 `ALTER TABLE` 来实现。它能做的事情很多，从增加/删除列到修改约束、索引，甚至表名都可以改。
+在 PostgreSQL 里，修改表主要通过 `ALTER TABLE` 来实现。它能做的事情很多，从增加/删除列到修改约束、索引，甚至表名都可以改。
 
 
 | 操作              | 语法示例                                                                                                        |
@@ -478,7 +476,7 @@ SELECT xmin, id, name FROM users;
 
 ### 表继承
 
-在 PostgreSQL 里，表是可以继承的，这一点和面向对象编程类似。它允许你定义一个“父表”，然后创建“子表”继承它的列和约束。
+在 PostgreSQL 里，表是可以继承的，这一点和面向对象编程类似。它允许你定义一个父表，然后创建子表继承它的列和约束
 
 **基本语法**
 
@@ -1368,14 +1366,14 @@ postgres 中的约束，它是用来保证表数据的完整性和正确性的�
 
 ### 常见约束类型
 
-| 约束类型    | 说明                                       | 示例                                                                                                        |
-| ----------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| NOT NULL    | 列值不能为空                               | CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT NOT NULL);                                             |
-| UNIQUE      | 列值必须唯一，不能重复                     | ALTER TABLE users ADD CONSTRAINT unique_email UNIQUE (email);                                               |
-| PRIMARY KEY | 唯一标识一行数据，隐含 NOT NULL 和 UNIQUE  | CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT);                                                      |
-| FOREIGN KEY | 外键约束，保证引用的列值在另一个表中存在   | sql CREATE TABLE orders (order_id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id));                    |
-| CHECK       | 自定义条件限制列或多列数据                 | ALTER TABLE users ADD CONSTRAINT check_age CHECK (age >= 18);                                               |
-| EXCLUSION   | 复杂约束，保证两行数据在指定操作符下不冲突 | ALTER TABLE bookings ADD CONSTRAINT no_overlap EXCLUDE USING gist(room WITH =, tsrange(start,end) WITH &&); |
+| 约束类型    | 说明                                       | 
+| ----------- | ------------------------------------------ | 
+| NOT NULL    | 列值不能为空                               |
+| UNIQUE      | 列值必须唯一，不能重复                     | 
+| PRIMARY KEY | 唯一标识一行数据，隐含 NOT NULL 和 UNIQUE  |
+| FOREIGN KEY | 外键约束，保证引用的列值在另一个表中存在   |
+| CHECK       | 自定义条件限制列或多列数据                 |
+| EXCLUSION   | 复杂约束，保证两行数据在指定操作符下不冲突 |
 
 ### 检查约束
 检查约束是最通用的约束类型。它允许您指定某个列中的值必须满足布尔表达式。例如，要要求正的产品价格，您可以使用
@@ -2756,8 +2754,8 @@ SELECT to_tsquery('english', 'quick & fox');
 -- 'quick' & 'fox'
 ```
 
-+ 逻辑运算：`&` (AND), `|` (OR), `!` (NOT)
-+ 短语搜索：`<->` (紧邻), `<N>` (相隔 N 个词)
++ 逻辑运算：`&` `|`  `!`
++ 短语搜索：`<->` `<N>` 
 
 **词典**
 
@@ -2812,7 +2810,6 @@ SELECT 'fat cats ate rats'::tsvector @@ 'cat & rat'::tsquery;
 **排序与排名**
 
 + `ts_rank` / `ts_rank_cd`：计算匹配度
-    - 支持权重 A (标题) > B (摘要) > C (正文) > D (评论)
 + 例子：
 
 ```sql
