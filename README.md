@@ -228,19 +228,6 @@ PS D:\> createdb -U postgres mydb
 
 ## 语法规则
 
-### 查询语句
-
-```sql
-SELECT * FROM users;
-```
-
-这是一个最简单的查询语句，它代表着查询`users`表的全部字段数据，`*`在这里是通配符的意思，代表着表的全部字段，如果想要查询单独的字段，可以直接列出这个字段的名称，例如：
-
-```sql
-SELECT name FROM users;
-```
-
-这个语句就只查询`users`表的`name`字段的所有值
 
 ### 注释
 跟大多数编程语言类似的是，SQL 语句中也可以使用注释，可以用来辅助记忆或者清理不想运行的 SQL 语句，注释分为以下两种：
@@ -572,11 +559,23 @@ DELETE FROM products
 
 ## 查询语句
 
-### 高级分组
+### 简单的查询语句
 
-在 PostgreSQL 里，`GROUPING SETS`、`CUBE` 和 `ROLLUP` 都是高级分组的工具，用来一次性生成多种 `GROUP BY` 结果，避免写一堆 `UNION ALL`
+```sql
+SELECT * FROM users;
+```
 
-**普通 GROUP BY 回顾**
+这是一个最简单的查询语句，它代表着查询`users`表的全部字段数据，`*`在这里是通配符的意思，代表着表的全部字段，如果想要查询单独的字段，可以直接列出这个字段的名称，例如：
+
+```sql
+SELECT name FROM users;
+```
+
+这个语句就只查询`users`表的`name`字段的所有值
+
+### 分组语句
+
+- 查看 example.sql 文件获取演示数据
 
 ```sql
 SELECT region, product, SUM(sales)
@@ -584,44 +583,21 @@ FROM orders
 GROUP BY region, product;
 ```
 
-如果你想要额外的结果，比如仅按 region 聚合，还得写额外 SQL（或者 `UNION ALL`）
+按 (region, product) 分组，每个地区、每个产品一行。这就是最基础的二维分组统计
 
-**GROUPING SETS**
+### 高级分组
 
-`GROUPING SETS` = 指定多个分组方式，一次性输出
+在 PostgreSQL 里，`GROUPING SETS`、`CUBE` 和 `ROLLUP` 都是高级分组的工具，用来一次性生成多种 `GROUP BY` 结果，避免写一堆 `UNION ALL`
 
-```sql
-SELECT region, product, SUM(sales)
-FROM orders
-GROUP BY GROUPING SETS (
-    (region, product),   -- 按区域+产品
-    (region),            -- 按区域
-    (product),           -- 按产品
-    ()                   -- 总和（无分组）
-);
-```
+**逐级汇总**
 
-相当于写了 4 个查询并 `UNION ALL`，Postgres 会帮你合并
-
-结果会长这样：
-
-| region | product | sum |              |
-| ------ | ------- | --- | ------------ |
-| East   | A       | 100 |              |
-| East   | B       | 200 |              |
-| East   | null    | 300 | ← 按 region  |
-| null   | A       | 150 | ← 按 product |
-| null   | null    | 450 | ← 总计       |
-
-
-**ROLLUP**
-
-`ROLLUP` = 逐级向上汇总，常用于分层小计 → 总计
+ROLLUP 子句，用于逐级向上汇总，常用于分层小计或总计
 
 ```sql
 SELECT region, product, SUM(sales)
 FROM orders
-GROUP BY ROLLUP(region, product);
+GROUP BY ROLLUP(region, product)
+ORDER BY region, product;
 ```
 
 等价于：
@@ -636,9 +612,9 @@ GROUP BY GROUPING SETS (
 
 特点：它会自动按参数顺序逐层聚合
 
-**CUBE**
+**所有维度汇总**
 
-`CUBE` = 维度的所有组合
+CUBE 子句常用于维度的所有组合
 
 ```sql
 SELECT region, product, SUM(sales)
@@ -657,10 +633,9 @@ GROUP BY GROUPING SETS (
 );
 ```
 
-如果你有 N 个维度，`CUBE` 会生成 2^N 个分组结果
-例如 `(region, product, year)` → 会有 8 种分组
+如果你有 N 个维度，`CUBE` 会生成 2^N 个分组结果，例如 `(region, product, year)` 会有 8 种分组
 
-**GROUPING 函数**
+**辅助函数**
 
 因为小计/总计会把字段填成 `NULL`，有时候你要区分：
 
@@ -679,8 +654,26 @@ GROUP BY CUBE(region, product);
 
 `GROUPING(column)` 返回：
 
-* 0 → 此列参与分组
-* 1 → 此列是聚合产生的 NULL
+* 0，此列参与分组
+* 1，此列是聚合产生的 NULL
+
+**自定义汇总**
+
+`GROUPING SETS` 指定多个分组方式，一次性输出
+
+```sql
+SELECT region, product, SUM(sales)
+FROM orders
+GROUP BY GROUPING SETS (
+    (region, product),   -- 按区域+产品
+    (region),            -- 按区域
+    (product),           -- 按产品
+    ()                   -- 总和（无分组）
+);
+```
+
+相当于写了 4 个查询并 `UNION ALL`，Postgres 会帮你合并
+
 
 ### 组合查询
 
@@ -689,7 +682,7 @@ GROUP BY CUBE(region, product);
 **基本规则**
 
 * 参与的 `SELECT` 必须有相同的列数，且每一列的数据类型必须可以相互兼容
-* 默认会自动去重（返回集合）
+* 默认会自动去重
 * 如果你要保留重复行，用 `ALL` 关键字
 
 **UNION**
@@ -704,7 +697,7 @@ SELECT name FROM suppliers;
 
 得到两个表里所有名字（重复的只出现一次）
 
-保留重复行：
+- 保留重复行：
 
 ```sql
 SELECT name FROM customers
@@ -712,11 +705,11 @@ UNION ALL
 SELECT name FROM suppliers;
 ```
 
-保留重复记录
+- 保留重复记录
 
 **INTERSECT**
 
-用途：取两个结果的交集（共同部分）
+- 用途：取两个结果的交集
 
 ```sql
 SELECT name FROM customers
@@ -758,7 +751,7 @@ SELECT name FROM suppliers;
 
 ### VALUES 列表
 
-在 PostgreSQL 里，`VALUES` 列表是一种表表达式，用来直接在 SQL 中构造一张临时表。它可以出现在 `SELECT`、`INSERT` 或 `FROM` 子句中。
+在 PostgreSQL 里，`VALUES` 列表是一种表表达式，用来直接在 SQL 中构造一张临时表。它可以出现在 `SELECT`、`INSERT` 或 `FROM` 子句中
 
 **基本语法**
 
@@ -813,7 +806,7 @@ VALUES (1, 'Alice'),
        (3, 'Carol');
 ```
 
-**和 JOIN / 其他表一起用**
+**用于 JOIN**
 
 ```sql
 SELECT u.id, u.name, v.score
@@ -824,7 +817,7 @@ JOIN (VALUES (1, 90), (2, 80), (3, 70)) AS v(id, score)
 
 这里 `VALUES` 列表相当于一张临时表，可以参与 `JOIN`
 
-**VALUES + UNION / INTERSECT**
+**组合**
 
 ```sql
 SELECT * FROM (VALUES (1), (2), (3)) AS t(x)
@@ -858,7 +851,7 @@ WHERE code = 'B';
 
 * 给复杂查询拆分逻辑，提高可读性
 * 类似临时视图，可以被后续查询多次引用
-* 可以递归，写层级结构查询（树/图）
+* 可以递归，写层级结构查询
 
 **基本语法**
 
@@ -872,7 +865,7 @@ FROM cte_name;
 
 `cte_name` 就像一个临时表，作用域仅限于这条 SQL
 
-**多个 CTE**
+**多个公共表**
 
 ```sql
 WITH active_users AS (
@@ -891,8 +884,7 @@ JOIN big_orders b ON u.id = b.user_id;
 
 `active_users` 和 `big_orders` 都是临时表，可以在主查询里自由组合
 
-
-**递归 CTE**
+**递归公共表**
 
 递归 CTE 用于层级/树状结构查询，比如员工上下级、目录树
 
@@ -915,7 +907,7 @@ WITH RECURSIVE subordinates AS (
 SELECT * FROM subordinates;
 ```
 
-这个查询会找出 `id = 1` 的员工及其所有下属（无限层级）
+这个查询会找出 `id = 1` 的员工及其所有下属
 
 
 **CTE vs 子查询**
@@ -925,7 +917,7 @@ SELECT * FROM subordinates;
 
 例子对比：
 
-子查询版：
+- 子查询版：
 
 ```sql
 SELECT u.name, o.total
@@ -937,7 +929,7 @@ JOIN (
 ) o ON u.id = o.user_id;
 ```
 
-CTE 版：
+- CTE 版：
 
 ```sql
 WITH order_totals AS (
@@ -969,7 +961,7 @@ SELECT * FROM cte WHERE id < 10;
 * 递归查询：树/图遍历
 * 调试 SQL：逐步验证逻辑
 
-> 公用表表达式（CTE）= 临时视图，让 SQL 更清晰，适合分步骤写复杂逻辑
+> 公用表表达式 = 临时视图，让 SQL 更清晰，适合分步骤写复杂逻辑
 
 [返回目录](#目录)
 
@@ -985,7 +977,7 @@ SeLect 1;
 select 1;
 ```
 
-虽然结果相同，但如果随意使用不规范的大小写，可能引起团队成员的反感。没有规矩不成方圆，SQL 也有最佳实践
+虽然结果相同，但如果随意使用不规范的大小写，可能引起团队成员或其他人的困惑。毕竟 SQL 写出来是给人看的不是吗？因此写 SQL 也有最佳实践
   
 ### 最佳语句风格实践
 
