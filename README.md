@@ -17,7 +17,7 @@
 | [语法规则](docs/basics/语法规则.md)         | [触发器](docs/advanced/触发器.md)         | [系统信息函数](docs/manage/系统信息函数.md)   |                                                |                                          |
 | [表](docs/basics/表.md)                     | [存储过程](docs/advanced/存储过程.md)     | [查看运行参数](docs/manage/查看运行参数.md)   |                                                |                                          |
 | [数据操作](docs/basics/数据操作.md)         | [模式管理](docs/advanced/模式管理.md)     | [修改运行参数](docs/manage/自定义运行参数.md) |                                                |                                          |
-| [查询语句](docs/basics/查询语句.md)         | [表分区](docs/advanced/表分区.md)         | [数据库管理](docs/manage/数据库管理.md)       |                                                |                                          |
+| [查询语句](docs/basics/查询语句.md)         | [表分区](docs/advanced/表分区.md)         | [模板数据库](docs/manage/模板数据库.md)       |                                                |                                          |
 | [查询语句风格](docs/basics/查询语句风格.md) | [角色管理](docs/advanced/角色管理.md)     | [数据库维护](docs/manage/数据库维护.md)       |                                                |                                          |
 | [字段类型](docs/basics/字段类型.md)         | [行安全策略](docs/advanced/行安全策略.md) | [备份与恢复](docs/manage/备份与恢复.md)       |                                                |                                          |
 | [字段约束](docs/basics/字段约束.md)         | [客户端认证](docs/advanced/客户端认证.md) | [预写式日志](docs/manage/预写式日志.md)       |                                                |                                          |

@@ -240,4 +240,4 @@ RAISE EXCEPTION 'Error: %', v_error;
 * 触发器逻辑保持轻量（复杂逻辑放到函数中）
 * 使用 `RAISE NOTICE` 调试，但生产环境减少日志输出
 
-[返回目录](#目录)
+[返回目录](/README.md)
