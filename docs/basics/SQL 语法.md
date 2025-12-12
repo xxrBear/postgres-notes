@@ -1,0 +1,142 @@
+# SQL 语法
+
+## 查询语句
+从数据库查询数据的语句叫做数据库查询语句，在 SQL 中 SELECT 用来指定查询：
+```sql
+SELECT 1;  -- 1
+
+SELECT * FROM table1;  -- 查询 table1 的所有数据
+```
+
+## 注释
+跟大多数编程语言类似的是，SQL 语句中也可以使用注释，可以用来辅助记忆或者清理不想运行的 SQL 语句，注释分为以下两种：
+
+- 单行注释
+```sql
+-- 单行注释
+```
+
+- 文档注释
+```sql
+/*
+  文档注释可以注释多行
+*/
+```
+
+## 类型转换
+
+在 PostgreSQL 中，可以将表达式从一种数据类型转换为另一种数据类型。对于数据类型转换 PostgreSQL 支持两种等效的语法:
+
+* `CAST(expression AS type)` 标准 SQL 语法
+* `expression::type`  PostgreSQL 历史性的简写语法
+
+**强制转换的作用**
+
+当对已知类型的表达式进行强制转换时，表示在运行时进行类型转换。只有在定义了合适的类型转换操作时，转换才会成功
+
+```sql
+-- 使用 CAST
+SELECT CAST('123' AS integer);
+
+-- 使用 :: 简写
+SELECT '123'::integer;
+
+-- 将浮点数转为文本
+SELECT CAST(3.14159 AS text);
+SELECT 3.14159::text;
+
+-- 将字符串转为日期
+SELECT '2025-09-04'::date;
+```
+
+**自动类型转换**
+
+如果表达式的目标类型明确（例如，将值赋给表列时），通常可以省略显式类型转换，系统会自动进行类型转换
+
+```sql
+-- 表定义
+CREATE TABLE demo (
+    id serial PRIMARY KEY,
+    amount numeric
+);
+
+-- 插入时字符串会自动转换为 numeric
+INSERT INTO demo (amount) VALUES ('123.45');
+
+-- 插入整数会自动转为 numeric
+INSERT INTO demo (amount) VALUES (100);
+```
+
+* 自动强制转换仅适用于系统目录中标记为可隐式应用的转换
+* 其他类型的转换必须使用显式语法，以避免意外转换的发生
+
+**类函数语法**
+
+PostgreSQL 还允许使用类似函数的语法进行类型转换：
+
+```sql
+typename(expression)
+```
+
+```sql
+-- float8 可以直接作为函数名使用
+SELECT float8('3.14');
+
+-- 不能直接写 double precision，需要加双引号
+SELECT "double precision"('3.14159');
+```
+
+注意:
+
+- 这种方式只适用于类型名称本身也是有效函数名的情况，例如 `float8`
+- 对于 `double precision` 等类型，不能直接使用函数语法
+- 对于 `interval`、`time` 和 `timestamp`，必须用双引号括起类型名称才能使用函数语法
+- 由于存在语法限制和可能的不一致性，通常建议避免使用这种语法
+
+## 运算符
+
+PostgreSQL 的运算符主要用在数据计算、查询过滤、字符串、数组、JSON 处理、时间区间判断和全文搜索等实际业务场景中。
+
+例如，你可以使用 Postgres 当一个计算器使用：
+
+```sql
+SELECT 1 + 1; -- 2
+
+SELECT 3 * 4; -- 12
+```
+
+当然除了这些简单的功能以外，运算符的主要作用是用来查询过滤数据，例如，你想查找`users`表中年龄大于 18 的数据，可以使用运算符 `>`
+
+```sql
+SELECT * FROM users WHERE age > 18;
+```
+
+更多运算符，可查看[运算符参考](#运算符参考)
+
+## 创建函数
+创建函数的语句如下：
+```sql
+CREATE FUNCTION concat_lower_or_upper(a text, b text, uppercase boolean DEFAULT false)
+RETURNS text
+AS
+$$
+ SELECT CASE
+        WHEN $3 THEN UPPER($1 || ' ' || $2)
+        ELSE LOWER($1 || ' ' || $2)
+        END;
+$$
+LANGUAGE SQL IMMUTABLE STRICT;
+```
+
+调用创建的函数：
+```sql
+SELECT concat_lower_or_upper('Hello', 'xiong', true);
+ concat_lower_or_upper;
+
+-- 或者使用命名表示法
+SELECT concat_lower_or_upper(a => 'Hello', b => 'World');
+ concat_lower_or_upper
+```
+
+
+[返回目录](/README.md)

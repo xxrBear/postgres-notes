@@ -1,4 +1,6 @@
--- 查询语句
+/* 
+  查询语句
+*/
 
 -- 建表语句
 CREATE TABLE orders (
