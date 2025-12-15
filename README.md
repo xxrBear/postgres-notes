@@ -15,7 +15,7 @@
 | [简介](docs/basics/简介.md)                   | [事务处理](docs/advanced/事务处理.md)     | [系统管理函数](docs/manage/系统管理函数.md)   | [PL/pgSQL过程语言](docs/extend/SQL过程语言.md) | [运算符参考](docs/ref/字段类型参考.md)   |
 | [安装](docs/basics/安装.md)                   | [显示锁定](docs/advanced/显示锁定.md)     | [命令行工具](docs/manage/命令行工具.md)       | [统计与分析](docs/extend/统计与分析.md)        | [字段类型参考](docs/ref/字段类型参考.md) |
 | [SQL 词法结构](docs/basics/SQL%20词法结构.md) | [触发器](docs/advanced/触发器.md)         | [系统信息函数](docs/manage/系统信息函数.md)   |                                                |                                          |
-| [SQL 语法规则](docs/basics/SQL%20值表达式.md) | [存储过程](docs/advanced/存储过程.md)     | [查看运行参数](docs/manage/查看运行参数.md)   |                                                |                                          |
+| [SQL 值表达式](docs/basics/SQL%20值表达式.md) | [存储过程](docs/advanced/存储过程.md)     | [查看运行参数](docs/manage/查看运行参数.md)   |                                                |                                          |
 | [表](docs/basics/表.md)                       | [模式管理](docs/advanced/模式管理.md)     | [修改运行参数](docs/manage/自定义运行参数.md) |                                                |                                          |
 | [数据操作](docs/basics/数据操作.md)           | [表分区](docs/advanced/表分区.md)         | [模板数据库](docs/manage/模板数据库.md)       |                                                |                                          |
 | [查询语句](docs/basics/查询语句.md)           | [角色管理](docs/advanced/角色管理.md)     | [数据库维护](docs/manage/数据库维护.md)       |                                                |                                          |
