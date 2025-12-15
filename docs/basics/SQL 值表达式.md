@@ -1,12 +1,4 @@
-# SQL 语法
-
-## 查询语句
-从数据库查询数据的语句叫做数据库查询语句，在 SQL 中 SELECT 用来指定查询：
-```sql
-SELECT 1;  -- 1
-
-SELECT * FROM table1;  -- 查询 table1 的所有数据
-```
+# SQL 值表达式
 
 ## 注释
 跟大多数编程语言类似的是，SQL 语句中也可以使用注释，可以用来辅助记忆或者清理不想运行的 SQL 语句，注释分为以下两种：
@@ -19,7 +11,8 @@ SELECT * FROM table1;  -- 查询 table1 的所有数据
 - 文档注释
 ```sql
 /*
-  文档注释可以注释多行
+  文档注释
+  可以注释多行
 */
 ```
 
@@ -28,9 +21,8 @@ SELECT * FROM table1;  -- 查询 table1 的所有数据
 在 PostgreSQL 中，可以将表达式从一种数据类型转换为另一种数据类型。对于数据类型转换 PostgreSQL 支持两种等效的语法:
 
 * `CAST(expression AS type)` 标准 SQL 语法
-* `expression::type`  PostgreSQL 历史性的简写语法
 
-**强制转换的作用**
+* `expression::type`  PostgreSQL 历史性的简写语法
 
 当对已知类型的表达式进行强制转换时，表示在运行时进行类型转换。只有在定义了合适的类型转换操作时，转换才会成功
 
@@ -48,8 +40,6 @@ SELECT 3.14159::text;
 -- 将字符串转为日期
 SELECT '2025-09-04'::date;
 ```
-
-**自动类型转换**
 
 如果表达式的目标类型明确（例如，将值赋给表列时），通常可以省略显式类型转换，系统会自动进行类型转换
 
@@ -69,8 +59,6 @@ INSERT INTO demo (amount) VALUES (100);
 
 * 自动强制转换仅适用于系统目录中标记为可隐式应用的转换
 * 其他类型的转换必须使用显式语法，以避免意外转换的发生
-
-**类函数语法**
 
 PostgreSQL 还允许使用类似函数的语法进行类型转换：
 
@@ -136,6 +124,50 @@ SELECT concat_lower_or_upper('Hello', 'xiong', true);
 -- 或者使用命名表示法
 SELECT concat_lower_or_upper(a => 'Hello', b => 'World');
  concat_lower_or_upper
+```
+
+## 数组构造器
+数组构造器是一个表示式，它返回一个数组数据
+```sql
+SELECT ARRAY[1,2,3+4];
+  array
+---------
+ {1,2,7}
+(1 row)
+```
+
+## 行构造器
+
+行构造器是一个表达式，它使用其成员字段的值来构建行值
+
+```sql
+SELECT ROW(1,2.5,'this is a test');
+
+-- (1,2.5,"this is a test")
+```
+行构造器最强大的应用在于比较 (Comparison) 和 查询返回值 (Return Value)。
+
+```sql
+-- 查找 (salary, employee_id) 比 (50000, 100) 同时更大的员工
+SELECT *
+FROM employees
+WHERE (salary, employee_id) > (50000, 100);
+
+-- 数据插入
+SELECT *
+FROM employees
+WHERE (department, job_title) IN (
+    ('Sales', 'Manager'),
+    ('IT', 'Developer'),
+    ('HR', 'Specialist')
+);
+
+-- 返回复合类型
+CREATE FUNCTION get_definition(p_id INT, p_name TEXT) RETURNS definition_row AS $$
+BEGIN
+    RETURN ROW(p_id, p_name); -- 使用 ROW 或 () 构造器
+END;
+$$ LANGUAGE plpgsql;
 ```
 
 
