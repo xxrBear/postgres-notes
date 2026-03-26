@@ -145,7 +145,7 @@ SELECT ROW(1,2.5,'this is a test');
 
 -- (1,2.5,"this is a test")
 ```
-行构造器最强大的应用在于比较 (Comparison) 和 查询返回值 (Return Value)。
+行构造器最强大的应用在于比较和查询返回值
 
 ```sql
 -- 查找 (salary, employee_id) 比 (50000, 100) 同时更大的员工
