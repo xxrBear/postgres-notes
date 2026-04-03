@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <img src="https://cdn.jsdelivr.net/gh/xxrBear/image/Hugo/202505152126346.png" height="200"/>
+    <img src="assets/img/pg-icon.png" height="200"/>
   </picture>
   <br>
   <a href="https://www.postgresql.org/docs/">PostgreSQL 手册</a> |
