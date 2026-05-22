@@ -5,8 +5,8 @@
   <br>
   <a href="https://www.postgresql.org/docs/">PostgreSQL 手册</a> |
   <a href="https://leetcode.cn/problemset/database/">力扣</a> |
-  <a href="https://chatgpt.com/">ChatGPT</a>
-  <a href="https://chatgpt.com/">Claude</a>
+  <a href="https://chatgpt.com/">ChatGPT</a> |
+  <a href="https://chatgpt.com/">Claude</a> |
   <a href="https://chatgpt.com/">Gemini</a>
 </p>
 
