@@ -1,4 +1,4 @@
-/* 
+/*
   查询语句
 */
 
@@ -11,7 +11,7 @@ CREATE TABLE orders (
     sales NUMERIC(12,2) NOT NULL  -- 销售额
 );
 
--- 插入示例数据
+-- 示例数据
 INSERT INTO orders (region, product, order_date, sales) VALUES
 ('Asia', 'Laptop',  '2025-01-05', 1500.00),
 ('Asia', 'Laptop',  '2025-01-18', 1200.00),
@@ -56,3 +56,25 @@ INSERT INTO employee (id, name, dept_id) VALUES (3, '王五', 103); -- 人事部
 INSERT INTO employee (id, name, dept_id) VALUES (4, '赵六', 105); -- 财务部
 INSERT INTO employee (id, name, dept_id) VALUES (5, '小明', NULL); -- 无部门
 INSERT INTO employee (id, name, dept_id) VALUES (6, '小红', 999); -- 孤立的部门 ID
+
+/*
+  窗口函数
+*/
+CREATE TABLE sales (
+    id SERIAL PRIMARY KEY,
+    employee TEXT,
+    region TEXT,
+    sales_amount INT,
+    sale_date DATE
+);
+
+INSERT INTO sales (employee, region, sales_amount, sale_date) VALUES
+('Alice', 'East', 100, '2024-01-01'),
+('Alice', 'East', 150, '2024-01-02'),
+('Bob', 'East', 200, '2024-01-01'),
+('Bob', 'East', 300, '2024-01-02'),
+('Charlie', 'West', 400, '2024-01-01'),
+('Charlie', 'West', 350, '2024-01-02'),
+('Alice', 'East', 120, '2024-01-03'),
+('Bob', 'East', 250, '2024-01-03'),
+('Charlie', 'West', 500, '2024-01-03');
