@@ -6,8 +6,7 @@
   <a href="https://www.postgresql.org/docs/">PostgreSQL 手册</a> |
   <a href="https://leetcode.cn/problemset/database/">力扣</a> |
   <a href="https://chatgpt.com/">ChatGPT</a> |
-  <a href="https://claude.ai/new">Claude</a> |
-  <a href="https://gemini.google.com/app">Gemini</a>
+  <a href="https://www.kimi.com/">Kimi</a>
 </p>
 
 ## 目录
